@@ -1,5 +1,8 @@
 ; these are memory address we need to use
+; Kid Icarus locations that we don't want to change
 LVL1START 			equ 	$7C1A ; memory address where lvl 1-1 data is written
+
+; zero page variables that we use
 CUR_ROOM  			equ		$0191
 POTENTIAL 			equ		$0192
 ROOM_INDEX 			equ		$0193
@@ -11,36 +14,20 @@ RNG_SEED_RB 		equ		$0198
 Y_STORAGE 			equ		$0199
 RRO_WORK			equ		$019A ; holds the original room rules offset, which we need to save
 
-ROOM_RULES_DATA 	equ 	$BE00
-ROOM_ADDRESSES 		equ     $BE84 ; this is the first byte of the address.  add 2 per room to get the room
+; ROOM_RULES_DATA is the start of our bin, everything else that we
+; reference should be offset from it based on the size of the data
+ROOM_RULES_DATA 	equ		$B9F0
+ROOM_ADDRESSES 		equ		ROOM_RULES_DATA + 132; $BE84 ; this is the first byte of the address.  add 2 per room to get the room
+ROUTINE_START 		equ		ROOM_ADDRESSES + 004E ; $BECC - we don't actually use this here
 LVL1_SIZE 			equ		#$14
 FRAME_COUNT 		equ		$0014
 INITIAL_SEED_LB		equ		$00EF
 INITIAL_SEED_RB		equ		$00F0
-END_ROOM_LVL1		equ     #$39
-END_ROOM_LVL1LB		equ		#$70
+END_ROOM_LVL1		equ		#$39 ; Room 32, it has the highest likelyhood of allowing access
+END_ROOM_LVL1LB		equ		#$70 ; lowerbyte of Room 32
 
 ; datablock screenrules
 org ROOM_RULES_DATA
-; old rules
-;db $6E, $74, $1F, $C8, $A1, $3B, $F0, $38 ;  1  2
-;db $B9, $7F, $B7, $EF, $AB, $7F, $D6, $A8 ;  3  4
-;db $2F, $FF, $DE, $AF, $AB, $7B, $F4, $BF ;  5  6
-;db $01, $02, $00, $08, $FF, $FF, $FF, $FF ;  7  8
-;db $0F, $1E, $16, $0C, $3F, $FF, $FF, $ED ;  9 10
-;db $B9, $7F, $B7, $B4, $A9, $7B, $F5, $CF ; 11 12
-;db $BF, $FF, $D6, $AF, $B9, $7B, $F2, $1F ; 13 14
-;db $B9, $7F, $B7, $B7, $60, $57, $96, $83 ; 15 16
-;db $7F, $FF, $FF, $ED, $33, $FF, $F6, $AF ; 17 18
-;db $11, $20, $32, $00, $2E, $74, $1F, $C7 ; 19 20
-;db $2A, $75, $9F, $A5, $B9, $76, $3F, $C6 ; 21 22
-;db $2F, $DF, $D6, $22, $00, $00, $21, $10 ; 23 24
-;db $00, $00, $20, $02, $FF, $FF, $FF, $FD ; 25 26
-;db $23, $9F, $D7, $45, $7F, $7F, $7F, $74 ; 27 34 - we skip 28 - 33
-;db $BD, $BB, $E3, $08, $27, $DF, $DE, $27 ; 35 36
-;db $2F, $5F, $56, $87, $0E, $1C, $16, $60 ; 37 38
-;db $63, $7E, $5E, $A4					; 30 - need to add 28 and 29 still
-
 db $6E, $74, $1F, $40
 db $A1, $3B, $F0, $30
 db $B9, $7F, $B7, $60
@@ -76,42 +63,42 @@ db $0E, $1C, $16, $60
 db $63, $7E, $5E, $20
 
 ; addresses for 1 - 38
-db $00, $00 ; 0-index room
-db $0b, $71
-db $3e, $71
+db $00, $00
+db $0B, $71
+db $3E, $71
 db $80, $71
-db $a4, $71
-db $ec, $71
-db $3a, $72
+db $A4, $71
+db $EC, $71
+db $3A, $72
 db $73, $72
-db $a3, $72
-db $d3, $72
-db $4b, $73
+db $A3, $72
+db $D3, $72
+db $4B, $73
 db $81, $73
-db $a5, $73
-db $cf, $73
-db $f9, $73
+db $A5, $73
+db $CF, $73
+db $F9, $73
 db $23, $74
 db $56, $74
-db $7d, $74
-db $f8, $74
+db $7D, $74
+db $F8, $74
 db $76, $75
 db $97, $75
-db $c4, $75
-db $0c, $76
+db $C4, $75
+db $0C, $76
 db $39, $76
-db $b1, $76
+db $B1, $76
 db $17, $77
-db $4d, $77
-db $8c, $77
-db $db, $76
-db $a4, $74
-db $c5, $74
-db $e0, $74
+db $4D, $77
+db $8C, $77
+db $DB, $76
+db $A4, $74
+db $C5, $74
+db $E0, $74
 db $81, $76
 
-db $2e, $75
-db $bd, $70
+db $2E, $75
+db $BD, $70
 db $09, $73
 
 db $00, $70
@@ -139,14 +126,13 @@ loop:
   DEX                      
   BNE loop                
 
-
-generateRandomVerticalLevel:
 	; seed our rng
 	LDA INITIAL_SEED_LB
 	STA RNG_SEED
 	LDA INITIAL_SEED_RB
 	STA RNG_SEED_RB
-	
+
+generateRandomVerticalLevel:
 	; Y will be the room index
 	LDY #$00
 
@@ -180,12 +166,15 @@ buildlevel:
 	INY
 	LDA ROOM_ADDRESSES, X 
 	STA LVL1START, Y
-
+	INY				; y++
+	CPY LVL1_SIZE	; if > LVL1_SIZE we're done
+	BCS writeexit
+	
 chooseroom:
 	STY Y_STORAGE
 	LDA ROOM_RULES_OFFSET
 	STA RRO_WORK
-	JSR prng	
+	JSR prng
 	AND #$1F ; trim to 0-31
 	CLC
 	ADC #$01 ; add 1 so it's 1 - 32
@@ -224,14 +213,58 @@ bitcheck_loop:
 compareroom:
 	AND ROOM_RULE
 	BEQ chooseroom  ; no match, pick a new room
-	INY				; y++, we'll store this as the next room
-	CPY LVL1_SIZE	; if > LVL1_SIZE we're done
-	BCC buildlevel
+	BNE buildlevel	; match was good, build the level
 	
+writeexit:
 	; ensure that if we're at the end, that this room connects to the end
-	; 
+	; for now we're always exiting from room 30.  30's available come-from 
+	; rooms are 
+	; bytes for rooms that work are:
+	; 65 6E 64 48
+	;	0110 0101 ; 1 - 8
+	;	0110 1110 ; 9 - 16
+	;	0110 0100 ; 17 - 24
+	;	0100 1000 ; 25 - 27, 34 - 38
+	LDA POTENTIAL
+	LDX #$65
 	
+getexitrule:
+	CMP #$08
+	BMI bitcheck_exit
 	
+	LDX #$6E
+	SBC #$08
+	CMP #$08
+	BMI bitcheck_exit
+	
+	LDX #$64
+	SBC #$08
+	CMP #$08
+	BMI bitcheck_exit
+	
+	; this is the last option no need to compare
+	LDX #$48	
+	SBC #$08
+	STX ROOM_RULE
+	
+bitcheck_exit:
+	STA ROOM_BIT
+	LDA #$80
+
+bitcheck_loop_exit:
+	DEC ROOM_BIT
+	BEQ compareexit 
+	ROR A				; shift accumulator bit over
+	BNE bitcheck_loop_exit
+	
+compareexit:
+	; if ROOMRULE & the Accumulator are 0 then this exit doesn't work with this room
+	; and we need to start all over
+	AND ROOM_RULE
+	BNE writeexitaddress
+	JMP generateRandomVerticalLevel
+	
+writeexitaddress:
 	; write the exit room
 	LDA END_ROOM_LVL1
 	STA LVL1START, Y
