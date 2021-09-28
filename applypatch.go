@@ -53,8 +53,15 @@ func main() {
 		fmt.Printf("Error copying inpute file to output file: %s", err)
 		return
 	}
+
+	var doorPatchBytes []byte
+	doorPatchBytes = append(doorPatchBytes, 0xFF)
+	doorPatchBytes = append(doorPatchBytes, 0xFF)
+	doorPatchBytes = append(doorPatchBytes, 0xFF)
+	doorPatchBytes = append(doorPatchBytes, 0xFF)
 	patchFile(*outputFile, 0x0198F2, jumpBytes)
 	patchFile(*outputFile, *autogenOffset, autoGenBytes)
+	patchFile(*outputFile, 0x1efd9, doorPatchBytes)
 
 	// param: patch config consiting of patches with:
 	//			rom patch location
