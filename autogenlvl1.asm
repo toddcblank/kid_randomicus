@@ -1,6 +1,13 @@
 ; these are memory address we need to use
 ; Kid Icarus locations that we don't want to change
-LVL1START 			equ 	$7C1A ; memory address where lvl 1-1 data is written
+LVL_1_1_START		equ		$7C1A
+LVL_1_1_START_HB 	equ 	#$7C ; memory address where lvl 1-1 data is written
+LVL_1_1_START_LB 	equ 	#$1A ; memory address where lvl 1-1 data is written
+LVL_1_2_START_HB	equ		#$7C ; memory address where lvl 1-2 data is written
+LVL_1_2_START_LB	equ		#$34 ; memory address where lvl 1-2 data is written
+LVL_1_3_START_HB	equ		#$7C ; guess.
+LVL_1_3_START_LB	equ		#$52 ; guess.
+
 
 ; zero page variables that we use
 CUR_ROOM  			equ		$0191
@@ -14,17 +21,24 @@ RNG_SEED_RB 		equ		$0198
 Y_STORAGE 			equ		$0199
 RRO_WORK			equ		$019A ; holds the original room rules offset, which we need to save
 
-; ROOM_RULES_DATA is the start of our bin, everything else that we
+; Level Gen SubRoutine Params
+LVL_GEN_PARAM_SIZE			equ	$00C0 ; size of the level.  how many rooms to build
+LVL_GEN_END_ROOM_ADDR_PARAM	equ	$00C2 ; the address of the end room for the level.  we hardcode it for highest likelyhood
+LVL_GEN_START_ADDR_PARAM	equ	$00C4 ; where we should start writing the data for the level
+
+; ROOM_RULES_DATA is the start of our .bin, everything else that we
 ; reference should be offset from it based on the size of the data
 ROOM_RULES_DATA 	equ		$B9F0
 ROOM_ADDRESSES 		equ		ROOM_RULES_DATA + 132; $BE84 ; this is the first byte of the address.  add 2 per room to get the room
 ROUTINE_START 		equ		ROOM_ADDRESSES + 004E ; $BECC - we don't actually use this here
-LVL1_SIZE 			equ		#$14
+LVL_1_1_SIZE 		equ		#$14
+LVL_1_2_SIZE		equ		#$18
+LVL_1_3_SIZE		equ		#$24
 FRAME_COUNT 		equ		$0014
 INITIAL_SEED_LB		equ		$00EF
 INITIAL_SEED_RB		equ		$00F0
-END_ROOM_LVL1		equ		#$39 ; Room 32, it has the highest likelyhood of allowing access
-END_ROOM_LVL1LB		equ		#$70 ; lowerbyte of Room 32
+END_ROOM_LVL_1		equ		#$39 ; Room 32, it has the highest likelyhood of allowing access
+END_ROOM_LVL_1HB	equ		#$70 ; high order byte of Room 32
 
 ; datablock screenrules
 org ROOM_RULES_DATA
@@ -132,6 +146,46 @@ loop:
 	LDA INITIAL_SEED_RB
 	STA RNG_SEED_RB
 
+; load lvl 1-1 vars
+LDA LVL_1_1_SIZE
+STA LVL_GEN_PARAM_SIZE
+LDA LVL_1_1_START_LB
+STA LVL_GEN_START_ADDR_PARAM
+LDA LVL_1_1_START_HB
+STA LVL_GEN_START_ADDR_PARAM+1
+LDA END_ROOM_LVL_1
+STA LVL_GEN_END_ROOM_ADDR_PARAM
+LDA END_ROOM_LVL_1HB
+STA LVL_GEN_END_ROOM_ADDR_PARAM+1
+JSR generateRandomVerticalLevel
+
+; load lvl 1-2 vars
+LDA LVL_1_2_SIZE
+STA LVL_GEN_PARAM_SIZE
+LDA LVL_1_2_START_LB
+STA LVL_GEN_START_ADDR_PARAM
+LDA LVL_1_2_START_HB
+STA LVL_GEN_START_ADDR_PARAM+1
+LDA END_ROOM_LVL_1
+STA LVL_GEN_END_ROOM_ADDR_PARAM
+LDA END_ROOM_LVL_1HB
+STA LVL_GEN_END_ROOM_ADDR_PARAM+1
+JSR generateRandomVerticalLevel
+
+; load lvl 1-3 vars
+LDA LVL_1_3_SIZE
+STA LVL_GEN_PARAM_SIZE
+LDA LVL_1_3_START_LB
+STA LVL_GEN_START_ADDR_PARAM
+LDA LVL_1_3_START_HB
+STA LVL_GEN_START_ADDR_PARAM+1
+LDA END_ROOM_LVL_1
+STA LVL_GEN_END_ROOM_ADDR_PARAM
+LDA END_ROOM_LVL_1HB
+STA LVL_GEN_END_ROOM_ADDR_PARAM+1
+JSR generateRandomVerticalLevel
+RTS
+
 generateRandomVerticalLevel:
 	; Y will be the room index
 	LDY #$00
@@ -161,13 +215,13 @@ buildlevel:
 	TAX
 		
 	LDA ROOM_ADDRESSES, X 
-	STA LVL1START,Y
+	STA (LVL_GEN_START_ADDR_PARAM),Y
 	INX
 	INY
 	LDA ROOM_ADDRESSES, X 
-	STA LVL1START, Y
+	STA (LVL_GEN_START_ADDR_PARAM), Y
 	INY				; y++
-	CPY LVL1_SIZE	; if > LVL1_SIZE we're done
+	CPY LVL_GEN_PARAM_SIZE	; if > SIZE we're done
 	BCS writeexit
 	
 chooseroom:
@@ -245,9 +299,9 @@ getexitrule:
 	; this is the last option no need to compare
 	LDX #$48	
 	SBC #$08
-	STX ROOM_RULE
 	
 bitcheck_exit:
+	STX ROOM_RULE
 	STA ROOM_BIT
 	LDA #$80
 
@@ -266,11 +320,11 @@ compareexit:
 	
 writeexitaddress:
 	; write the exit room
-	LDA END_ROOM_LVL1
-	STA LVL1START, Y
-	LDA END_ROOM_LVL1LB
+	LDA LVL_GEN_END_ROOM_ADDR_PARAM
+	STA (LVL_GEN_START_ADDR_PARAM), Y
+	LDA LVL_GEN_END_ROOM_ADDR_PARAM+1
 	INY
-	STA LVL1START, Y 
+	STA (LVL_GEN_START_ADDR_PARAM), Y
 	
 	RTS 			; we're done here
 

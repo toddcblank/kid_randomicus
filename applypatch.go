@@ -38,9 +38,6 @@ func main() {
 	jumpBytes = append(jumpBytes, byte(*autogenJumpLocation&0x0000FF))
 	jumpBytes = append(jumpBytes, byte((*autogenJumpLocation&0x00FF00)>>8))
 	jumpBytes = append(jumpBytes, 0x60)
-	for i := 0; i < 32; i++ {
-		jumpBytes = append(jumpBytes, 0xEA)
-	}
 	fmt.Println(fmt.Sprintf("Jump Bytes: %x\n", jumpBytes))
 
 	autoGenBytes, err := ioutil.ReadFile("autogenlvl1.bin")
