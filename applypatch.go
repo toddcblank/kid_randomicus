@@ -28,8 +28,10 @@ func main() {
 
 	// param offset to place new autogenlvl1.bin code, used as parameter so we can
 	// generate the proper jump in replace_routine
-	autogenOffset := flag.Int("autoGenOffset", 0x01BE10, "the offset of where the autogenlvl 1 bytes will be patched into")
+	autogenOffset := flag.Int("autoGenOffset", 0x01BE10, "the offset of where the autogenlvl bytes will be patched onto")
 	autogenJumpLocation := flag.Int("jumpLoc", 0xBED2, "the offset to jump to the new autogenlvl sub routine")
+	autoGenDungeonOffset := flag.Int("autoGenDungeonOffset", 0x11510, "the offset where the fortress_gen bytes will be patched onto")
+	dungeonRoutineJumpLocation := flag.Int("dungeonJumpLoc", 0x1510 + 164 - 0x10, "where to jump for the dungeon generation routine") 
 	flag.Parse()
 
 	fmt.Printf("\tData Patch Start Address %06X\n\tNew Subroutine Address %04X\n", *autogenOffset, *autogenJumpLocation)
@@ -38,11 +40,27 @@ func main() {
 	jumpBytes = append(jumpBytes, byte(*autogenJumpLocation&0x0000FF))
 	jumpBytes = append(jumpBytes, byte((*autogenJumpLocation&0x00FF00)>>8))
 	jumpBytes = append(jumpBytes, 0x60)
+	jumpBytes = append(jumpBytes, 0xEA)
+	jumpBytes = append(jumpBytes, 0xEA)
+	jumpBytes = append(jumpBytes, 0xEA)
+	jumpBytes = append(jumpBytes, 0xEA)
+	jumpBytes = append(jumpBytes, 0xEA)
+	jumpBytes = append(jumpBytes, 0xEA)
+	jumpBytes = append(jumpBytes, 0x20)
+	jumpBytes = append(jumpBytes, byte(*dungeonRoutineJumpLocation&0x0000FF))
+	jumpBytes = append(jumpBytes, byte((*dungeonRoutineJumpLocation&0x00FF00)>>8))
+	jumpBytes = append(jumpBytes, 0x60)
 	fmt.Println(fmt.Sprintf("Jump Bytes: %x\n", jumpBytes))
 
 	autoGenBytes, err := ioutil.ReadFile("autogenlvl1.bin")
 	if err != nil {
 		fmt.Printf("Error reading in autogen patch: %s", err)
+		return
+	}
+
+	dungeonGenBytes, err := ioutil.ReadFile("fortress_gen.bin")
+	if err != nil {
+		fmt.Printf("Error reading in dungeon generation patch: %s", err)
 		return
 	}
 
@@ -57,7 +75,8 @@ func main() {
 	doorPatchBytes = append(doorPatchBytes, 0xFF)
 	doorPatchBytes = append(doorPatchBytes, 0xFF)
 	patchFile(*outputFile, 0x0198F2, jumpBytes)
-	patchFile(*outputFile, *autogenOffset, autoGenBytes)
+	patchFile(*outputFile, *autogenOffset, autoGenBytes)	
+	patchFile(*outputFile, *autoGenDungeonOffset, dungeonGenBytes)
 	patchFile(*outputFile, 0x1efd9, doorPatchBytes)
 
 	// param: patch config consiting of patches with:
@@ -104,7 +123,7 @@ func patchFile(outputFile string, offset int, patchBytes []byte) error {
 		return err
 	}
 
-	fmt.Printf("\nLength: %d bytes", len)
+	fmt.Printf("\nLength: %d bytes at %x", len, offset)
 	fmt.Printf("\nFile Name: %s", file.Name())
 	return nil
 }
