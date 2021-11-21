@@ -2,7 +2,9 @@
 # variable piece of information
 # this is the rom address
 offsetROM=0x1BA00
-offsetROM_DUNG=0x1BD00
+#offsetROM_DUNG=0x1BD00
+offsetROM_DUNG=0x1F300
+
 # convert rom address to cpu address
 offsetCPU=$((($offsetROM - 0x10) & 0xFFFF))
 offsetCPUD=$((($offsetROM_DUNG - 0x10) & 0xFFFF))

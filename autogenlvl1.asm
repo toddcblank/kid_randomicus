@@ -5,8 +5,8 @@ LVL_1_1_START_HB 	equ 	#$7C ; memory address where lvl 1-1 data is written
 LVL_1_1_START_LB 	equ 	#$1A ; memory address where lvl 1-1 data is written
 LVL_1_2_START_HB	equ		#$7C ; memory address where lvl 1-2 data is written
 LVL_1_2_START_LB	equ		#$34 ; memory address where lvl 1-2 data is written
-LVL_1_3_START_HB	equ		#$7C ; guess.
-LVL_1_3_START_LB	equ		#$52 ; guess.
+LVL_1_3_START_HB	equ		#$7C ; memory address where lvl 1-3 data is written
+LVL_1_3_START_LB	equ		#$52 ; memory address where lvl 1-3 data is written
 
 
 ; zero page variables that we use
@@ -20,6 +20,8 @@ RNG_SEED 			equ 	$0197
 RNG_SEED_RB 		equ		$0198
 Y_STORAGE 			equ		$0199
 RRO_WORK			equ		$019A ; holds the original room rules offset, which we need to save
+STORE_SEED_LB		equ		$00B0
+STORE_SEED_RB		equ		$00B1
 
 ; Level Gen SubRoutine Params
 LVL_GEN_PARAM_SIZE			equ	$00C0 ; size of the level.  how many rooms to build
@@ -31,9 +33,9 @@ LVL_GEN_START_ADDR_PARAM	equ	$00C4 ; where we should start writing the data for 
 ROOM_RULES_DATA 	equ		$B9F0
 ROOM_ADDRESSES 		equ		ROOM_RULES_DATA + 132; $BE84 ; this is the first byte of the address.  add 2 per room to get the room
 ROUTINE_START 		equ		ROOM_ADDRESSES + 004E ; $BECC - we don't actually use this here
-LVL_1_1_SIZE 		equ		#$14
-LVL_1_2_SIZE		equ		#$18
-LVL_1_3_SIZE		equ		#$24
+LVL_1_1_SIZE 		equ		#$15
+LVL_1_2_SIZE		equ		#$19
+LVL_1_3_SIZE		equ		#$25
 FRAME_COUNT 		equ		$0014
 INITIAL_SEED_LB		equ		$00EF
 INITIAL_SEED_RB		equ		$00F0
@@ -141,10 +143,13 @@ loop:
   BNE loop                
 
 	; seed our rng
-	LDA INITIAL_SEED_LB
+	LDA INITIAL_SEED_LB	
+	STA STORE_SEED_LB
 	STA RNG_SEED
+	
 	LDA INITIAL_SEED_RB
 	STA RNG_SEED_RB
+	STA STORE_SEED_RB
 
 ; load lvl 1-1 vars
 LDA LVL_1_1_SIZE

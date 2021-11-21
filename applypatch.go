@@ -63,26 +63,47 @@ func main() {
 		fmt.Printf("Error reading in dungeon generation patch: %s", err)
 		return
 	}
+	
+	enemyPositionBytes, err := ioutil.ReadFile("enemy_position.bin")
+	if err != nil {
+		fmt.Printf("Error reading in enemy position patch: %s", err)
+		return
+	}
+	
+	doorPatchBytes, err := ioutil.ReadFile("end_of_level_upgrade_doors.bin")
+	if err != nil {
+		fmt.Printf("Error reading in door patch: %s", err)
+		return
+	}
+	
+	removeUpgradeReqBytes, err := ioutil.ReadFile("remove_upgrade_score_req.bin")
+	if err != nil {
+		fmt.Printf("Error reading in upgrade requirements patch: %s", err)
+		return
+	} 
 
 	if _, err := copyFile(*inputFile, *outputFile); err != nil {
 		fmt.Printf("Error copying inpute file to output file: %s", err)
 		return
 	}
 
-	var doorPatchBytes []byte
-	doorPatchBytes = append(doorPatchBytes, 0xFF)
-	doorPatchBytes = append(doorPatchBytes, 0xFF)
-	doorPatchBytes = append(doorPatchBytes, 0xFF)
-	doorPatchBytes = append(doorPatchBytes, 0xFF)
 	patchFile(*outputFile, 0x0198F2, jumpBytes)
-	patchFile(*outputFile, *autogenOffset, autoGenBytes)	
+	patchFile(*outputFile, *autogenOffset, autoGenBytes)
 	patchFile(*outputFile, *autoGenDungeonOffset, dungeonGenBytes)
-	patchFile(*outputFile, 0x1efd9, doorPatchBytes)
-
-	// param: patch config consiting of patches with:
-	//			rom patch location
-	//			.bin file to patch in
-	// patches should be able to have variables ideally
+	patchFile(*outputFile, 0x1B278, enemyPositionBytes)
+	patchFile(*outputFile, 0x1B56C, enemyPositionBytes)
+	patchFile(*outputFile, 0x1B840, enemyPositionBytes)
+	patchFile(*outputFile, 0x18ABE, removeUpgradeReqBytes)
+	patchFile(*outputFile, 0x1EFD9, doorPatchBytes)
+	
+	// These 2 patches replace the "score" value in the pause screen with displaying our current seed
+	patchFile(*outputFile, 0x1E74E, []byte{0xB0, 0x00})
+	patchFile(*outputFile, 0x1E791, []byte{0x28, 0x1A, 0x1A, 0x19, 0x0F})
+	
+	// These 3 patches invert the map/pencil/torch functionality
+	patchFile(*outputFile, 0x1E27B, []byte{0xD0})
+	patchFile(*outputFile, 0x1524C, []byte{0xD0})
+	patchFile(*outputFile, 0x1E21B, []byte{0xD0})
 }
 
 func copyFile(src string, dst string) (int64, error) {
