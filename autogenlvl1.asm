@@ -1,6 +1,7 @@
 ; these are memory address we need to use
 ; Kid Icarus locations that we don't want to change
 LVL_1_1_START		equ		$7C1A
+
 LVL_1_1_START_HB 	equ 	#$7C ; memory address where lvl 1-1 data is written
 LVL_1_1_START_LB 	equ 	#$1A ; memory address where lvl 1-1 data is written
 LVL_1_2_START_HB	equ		#$7C ; memory address where lvl 1-2 data is written
@@ -8,11 +9,19 @@ LVL_1_2_START_LB	equ		#$34 ; memory address where lvl 1-2 data is written
 LVL_1_3_START_HB	equ		#$7C ; memory address where lvl 1-3 data is written
 LVL_1_3_START_LB	equ		#$52 ; memory address where lvl 1-3 data is written
 
+LVL_3_1_START_HB	equ		#$77
+LVL_3_1_START_LB	equ		#$55
+LVL_3_2_START_HB	equ		#$77
+LVL_3_2_START_LB	equ		#$6D
+LVL_3_3_START_HB	equ		#$77
+LVL_3_3_START_LB	equ		#$8B
+
+DOOR_PATCH_LOC		equ		#$6100; we actually move the data there, hope it works!
 
 ; zero page variables that we use
 CUR_ROOM  			equ		$0191
 POTENTIAL 			equ		$0192
-ROOM_INDEX 			equ		$0193
+ROOM_INDEX 			equ		$0193 ; not used LUL
 ROOM_RULE 			equ   	$0194
 ROOM_RULES_OFFSET 	equ 	$0195
 ROOM_BIT 			equ		$0196 ; this is the value 0-7 for which bit we care about in the rule
@@ -22,25 +31,42 @@ Y_STORAGE 			equ		$0199
 RRO_WORK			equ		$019A ; holds the original room rules offset, which we need to save
 STORE_SEED_LB		equ		$00B0
 STORE_SEED_RB		equ		$00B1
+LEVEL_INDEX			equ		$00A0
 
 ; Level Gen SubRoutine Params
 LVL_GEN_PARAM_SIZE			equ	$00C0 ; size of the level.  how many rooms to build
 LVL_GEN_END_ROOM_ADDR_PARAM	equ	$00C2 ; the address of the end room for the level.  we hardcode it for highest likelyhood
 LVL_GEN_START_ADDR_PARAM	equ	$00C4 ; where we should start writing the data for the level
+LVL_START_ROOM_IDX_PARAM	equ	$00C6
+IDX_OFFSET_PARAM			equ	$00C8
+IDX_OFFSET_MAX_PARAM		equ	$00CA
+DOOR_COUNT					equ	$00CC
+CURR_LEVEL					equ	$00CE
+
 
 ; ROOM_RULES_DATA is the start of our .bin, everything else that we
 ; reference should be offset from it based on the size of the data
 ROOM_RULES_DATA 	equ		$B9F0
-ROOM_ADDRESSES 		equ		ROOM_RULES_DATA + 132; $BE84 ; this is the first byte of the address.  add 2 per room to get the room
+ROOM_ADDRESSES 		equ		ROOM_RULES_DATA + 196; $BE84 ; this is the first byte of the address.  add 2 per room to get the room
+DOOR_DATA			equ		ROOM_ADDRESSES + 98
 ROUTINE_START 		equ		ROOM_ADDRESSES + 004E ; $BECC - we don't actually use this here
 LVL_1_1_SIZE 		equ		#$15
 LVL_1_2_SIZE		equ		#$19
 LVL_1_3_SIZE		equ		#$25
+
+LVL_3_1_SIZE 		equ		#$14
+LVL_3_2_SIZE		equ		#$17
+LVL_3_3_SIZE		equ		#$1F
+
 FRAME_COUNT 		equ		$0014
 INITIAL_SEED_LB		equ		$00EF
 INITIAL_SEED_RB		equ		$00F0
 END_ROOM_LVL_1		equ		#$39 ; Room 32, it has the highest likelyhood of allowing access
 END_ROOM_LVL_1HB	equ		#$70 ; high order byte of Room 32
+END_ROOM_LVL_3		equ		#$2D ; Room 14, it has the highest likelyhood of allowing access
+END_ROOM_LVL_3HB	equ		#$70 ; high order byte of Room 14 in world 3
+LVL_1_START_ROOM	equ		#$21
+LVL_3_START_ROOM	equ		#$2D
 
 ; datablock screenrules
 org ROOM_RULES_DATA
@@ -78,6 +104,24 @@ db $2F, $5F, $56, $00
 db $0E, $1C, $16, $60
 db $63, $7E, $5E, $20
 
+; datablock for world 3 screenrules
+db $E1, $80, $00, $00
+db $C9, $C0, $00, $00
+db $E1, $80, $00, $00
+db $CB, $F0, $00, $00
+db $EF, $E0, $00, $00
+db $CB, $E0, $00, $00
+db $ED, $E0, $00, $00
+db $E7, $E0, $00, $00
+db $EF, $E0, $00, $00
+db $E9, $A0, $00, $00
+db $80, $B0, $00, $00
+db $EB, $E0, $00, $00
+db $A1, $C0, $00, $00
+db $84, $A0, $00, $00
+db $EF, $F0, $00, $00
+db $EF, $F0, $00, $00
+
 ; addresses for 1 - 38
 db $00, $00
 db $0B, $71
@@ -113,13 +157,81 @@ db $C5, $74
 db $E0, $74
 db $81, $76
 
+;lvl 1 start room, index 0x21
 db $2E, $75
-db $BD, $70
-db $09, $73
 
-db $00, $70
-db $39, $70
-db $78, $70
+; world 3 - we'll call it rooms 33 -> 50 (0x22 - 0x31, convienently 16 rooms)
+db $F3, $70
+db $0E, $71
+db $4D, $71
+db $86, $71
+db $AD, $71
+db $16, $72
+db $46, $72
+db $AF, $72
+db $06, $73
+db $3F, $73
+db $B7, $70
+; best start screen for lvl 3, index 0x2D
+db $79, $72
+db $2F, $71
+db $DA, $71
+db $F8, $71
+db $DC, $72
+
+; door placement data room index 0x00 - 0x21 (World 1)
+db $AE
+db $74
+db $4B
+db $93
+db $73
+db $AB
+db $75
+db $55
+db $A9
+db $71
+db $74
+db $2E
+db $99
+db $64
+db $B1
+db $A7
+db $4C
+db $2C
+db $8E
+db $51
+db $43
+db $55
+db $00
+db $9E
+db $00
+db $46
+db $41
+db $92
+db $00
+db $00
+db $00
+db $00
+db $9D
+; door placement room index 0x22 - 0x32 (World 3)
+db $64
+db $00
+db $AB
+db $16
+db $7C
+db $88
+db $88
+db $9C
+db $78
+db $5E
+db $BE
+db $5F
+db $00
+db $00
+db $00
+db $00
+
+
 
 original:
   LDA $9907,X              
@@ -150,6 +262,25 @@ loop:
 	LDA INITIAL_SEED_RB
 	STA RNG_SEED_RB
 	STA STORE_SEED_RB
+	
+generateRandomVerticalWorld:
+LDA #$00
+STA CURR_LEVEL
+STA DOOR_COUNT
+LDA LEVEL_INDEX
+CMP #$06
+BEQ genLevelThree
+; world 1 start
+LDA LVL_1_START_ROOM
+STA LVL_START_ROOM_IDX_PARAM
+LDA #$01
+STA IDX_OFFSET_PARAM
+LDA #$1F
+STA IDX_OFFSET_MAX_PARAM
+LDA END_ROOM_LVL_1
+STA LVL_GEN_END_ROOM_ADDR_PARAM
+LDA END_ROOM_LVL_1HB
+STA LVL_GEN_END_ROOM_ADDR_PARAM+1
 
 ; load lvl 1-1 vars
 LDA LVL_1_1_SIZE
@@ -158,11 +289,8 @@ LDA LVL_1_1_START_LB
 STA LVL_GEN_START_ADDR_PARAM
 LDA LVL_1_1_START_HB
 STA LVL_GEN_START_ADDR_PARAM+1
-LDA END_ROOM_LVL_1
-STA LVL_GEN_END_ROOM_ADDR_PARAM
-LDA END_ROOM_LVL_1HB
-STA LVL_GEN_END_ROOM_ADDR_PARAM+1
 JSR generateRandomVerticalLevel
+INC CURR_LEVEL
 
 ; load lvl 1-2 vars
 LDA LVL_1_2_SIZE
@@ -171,11 +299,8 @@ LDA LVL_1_2_START_LB
 STA LVL_GEN_START_ADDR_PARAM
 LDA LVL_1_2_START_HB
 STA LVL_GEN_START_ADDR_PARAM+1
-LDA END_ROOM_LVL_1
-STA LVL_GEN_END_ROOM_ADDR_PARAM
-LDA END_ROOM_LVL_1HB
-STA LVL_GEN_END_ROOM_ADDR_PARAM+1
 JSR generateRandomVerticalLevel
+INC CURR_LEVEL
 
 ; load lvl 1-3 vars
 LDA LVL_1_3_SIZE
@@ -184,10 +309,46 @@ LDA LVL_1_3_START_LB
 STA LVL_GEN_START_ADDR_PARAM
 LDA LVL_1_3_START_HB
 STA LVL_GEN_START_ADDR_PARAM+1
-LDA END_ROOM_LVL_1
+JSR generateRandomVerticalLevel
+RTS
+
+genLevelThree:
+LDA #$22
+STA IDX_OFFSET_PARAM
+LDA #$0F
+STA IDX_OFFSET_MAX_PARAM
+LDA END_ROOM_LVL_3
 STA LVL_GEN_END_ROOM_ADDR_PARAM
-LDA END_ROOM_LVL_1HB
+LDA END_ROOM_LVL_3HB
 STA LVL_GEN_END_ROOM_ADDR_PARAM+1
+LDA LVL_3_START_ROOM
+STA LVL_START_ROOM_IDX_PARAM
+
+;load lvl 3-1 vars
+LDA LVL_3_1_SIZE
+STA LVL_GEN_PARAM_SIZE
+LDA LVL_3_1_START_LB
+STA LVL_GEN_START_ADDR_PARAM
+LDA LVL_3_1_START_HB
+STA LVL_GEN_START_ADDR_PARAM+1
+JSR generateRandomVerticalLevel
+INC CURR_LEVEL
+
+LDA LVL_3_2_SIZE
+STA LVL_GEN_PARAM_SIZE
+LDA LVL_3_2_START_LB
+STA LVL_GEN_START_ADDR_PARAM
+LDA LVL_3_2_START_HB
+STA LVL_GEN_START_ADDR_PARAM+1
+JSR generateRandomVerticalLevel
+INC CURR_LEVEL
+
+LDA LVL_3_3_SIZE
+STA LVL_GEN_PARAM_SIZE
+LDA LVL_3_3_START_LB
+STA LVL_GEN_START_ADDR_PARAM
+LDA LVL_3_3_START_HB
+STA LVL_GEN_START_ADDR_PARAM+1
 JSR generateRandomVerticalLevel
 RTS
 
@@ -195,15 +356,8 @@ generateRandomVerticalLevel:
 	; Y will be the room index
 	LDY #$00
 
-	; start room rule at the first address for room 30's rule
-	; the start rooms are after the middle rooms
-	; room 30's rules are 32 * 4 = 128 bytes later (0x80)
-
-	;LDA #$80
-	;STA ROOM_RULES_OFFSET
-
 	; always start in room 33
-	LDA #$21
+	LDA LVL_START_ROOM_IDX_PARAM
 	STA POTENTIAL
 	
 buildlevel:
@@ -215,35 +369,77 @@ buildlevel:
 	ASL ROOM_RULES_OFFSET
 	ASL ROOM_RULES_OFFSET
 	
-	; shift to the left to multiply by 2
+	; shift to the left to multiply by 2 for room address index
 	ASL A
 	TAX
-		
 	LDA ROOM_ADDRESSES, X 
 	STA (LVL_GEN_START_ADDR_PARAM),Y
 	INX
 	INY
 	LDA ROOM_ADDRESSES, X 
 	STA (LVL_GEN_START_ADDR_PARAM), Y
-	INY				; y++
+	INY	
 	CPY LVL_GEN_PARAM_SIZE	; if > SIZE we're done
-	BCS writeexit
+	BCC placedoor:
+	JMP writeexit
+	
+placedoor:
+	; let's see if we should put a door here
+	STY Y_STORAGE
+	JSR prng
+	AND #$03
+	CMP #$03
+	BNE chooseroom ; no door move on
+
+	; door data is stage [0,1,2] screen [0-stage length], coords [0x00 - 0xFF], room [0x20-27]
+	LDA DOOR_COUNT
+	CMP #$08
+	BPL chooseroom ; we already have the doors
+
+	; x4 to get address offset
+	ASL A
+	ASL A
+	TAX
+;	
+	LDA CURR_LEVEL
+	STA DOOR_PATCH_LOC, X
+;	
+	INX
+	LDA Y_STORAGE
+	STA DOOR_PATCH_LOC, X
+	LSR DOOR_PATCH_LOC, X	;divide by 2 since Y assumes 2 bytes and we want pure index
+	DEC DOOR_PATCH_LOC, X	; subtract 1, since we're 1 too high after writing the room we're working with
+;	
+	INX
+	LDA POTENTIAL
+	TAY
+	INY
+	LDA DOOR_DATA, Y
+	BEQ chooseroom			;skip writing the rest if this room can't have a door
+	STA DOOR_PATCH_LOC, X
+;	
+	INX
+	JSR prng	
+	AND #$07
+	CLC
+	ADC #$20
+	STA DOOR_PATCH_LOC, X
+	INC DOOR_COUNT
 	
 chooseroom:
-	STY Y_STORAGE
 	LDA ROOM_RULES_OFFSET
 	STA RRO_WORK
 	JSR prng
-	AND #$1F ; trim to 0-31
+	AND IDX_OFFSET_MAX_PARAM ; trim to 0-31 or 0-15
 	CLC
-	ADC #$01 ; add 1 so it's 1 - 32
+	ADC IDX_OFFSET_PARAM ; add 1 or 33 so it's 1 - 32 or 33 - 49
 	CLC
 	LDY Y_STORAGE
 	
-	STA POTENTIAL 	
+	STA POTENTIAL
 
 	; room rules are sets of 8 bits, so we need to find
-	; the right 8 bits by subtrating 8 until we're under 8
+	; the right 8 bits by subtracting 8 until we're under 8
 	; and shifting right in our room rules
 getroomrule:
 	CMP #$08	
@@ -272,7 +468,7 @@ bitcheck_loop:
 compareroom:
 	AND ROOM_RULE
 	BEQ chooseroom  ; no match, pick a new room
-	BNE buildlevel	; match was good, build the level
+	JMP buildlevel	; match was good, build the level
 	
 writeexit:
 	; ensure that if we're at the end, that this room connects to the end
@@ -288,6 +484,9 @@ writeexit:
 	LDX #$65
 	
 getexitrule:
+
+	; if this is world 3 then every room except 0x0b works.
+	
 	CMP #$08
 	BMI bitcheck_exit
 	
@@ -321,6 +520,8 @@ compareexit:
 	; and we need to start all over
 	AND ROOM_RULE
 	BNE writeexitaddress
+	LDA #$00
+	STA DOOR_COUNT
 	JMP generateRandomVerticalLevel
 	
 writeexitaddress:
@@ -331,6 +532,24 @@ writeexitaddress:
 	INY
 	STA (LVL_GEN_START_ADDR_PARAM), Y
 	
+	; need to close off the exits too
+ 	; x4 to get address offset
+	LDA CURR_LEVEL
+	CMP #$02
+	BNE exiting
+	LDA DOOR_COUNT
+	ASL A
+	ASL A
+	TAX
+	LDA #$FF
+	STA DOOR_PATCH_LOC, X
+	INX
+	STA DOOR_PATCH_LOC, X
+	INX
+	STA DOOR_PATCH_LOC, X
+	INX
+	STA DOOR_PATCH_LOC, X
+	exiting:
 	RTS 			; we're done here
 
 

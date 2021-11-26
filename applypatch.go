@@ -81,6 +81,12 @@ func main() {
 		fmt.Printf("Error reading in upgrade requirements patch: %s", err)
 		return
 	} 
+	
+	adjustPricesBytes, err := ioutil.ReadFile("price_change.bin")
+	if err != nil {
+		fmt.Printf("Error reading in price change patch: %s", err)
+		return
+	}
 
 	if _, err := copyFile(*inputFile, *outputFile); err != nil {
 		fmt.Printf("Error copying inpute file to output file: %s", err)
@@ -94,7 +100,10 @@ func main() {
 	patchFile(*outputFile, 0x1B56C, enemyPositionBytes)
 	patchFile(*outputFile, 0x1B840, enemyPositionBytes)
 	patchFile(*outputFile, 0x18ABE, removeUpgradeReqBytes)
-	patchFile(*outputFile, 0x1EFD9, doorPatchBytes)
+	patchFile(*outputFile, 0x1EFB2, adjustPricesBytes)
+	
+	patchFile(*outputFile, 0x1F190, doorPatchBytes)
+	// patchFile(*outputFile, 0x1EFD9, doorPatchBytes)
 	
 	// These 2 patches replace the "score" value in the pause screen with displaying our current seed
 	patchFile(*outputFile, 0x1E74E, []byte{0xB0, 0x00})
@@ -104,8 +113,28 @@ func main() {
 	patchFile(*outputFile, 0x1E27B, []byte{0xD0})
 	patchFile(*outputFile, 0x1524C, []byte{0xD0})
 	patchFile(*outputFile, 0x1E21B, []byte{0xD0})
+	
+	// Patch out all the centurions
+	patchFile(*outputFile, 0x1B2C4, createDuplicateValueSlice(0xFF, 58))
+	patchFile(*outputFile, 0x1B5B8, createDuplicateValueSlice(0xFF, 66))
+	patchFile(*outputFile, 0x1B88C, createDuplicateValueSlice(0xFF, 40))
+
+	// patch out all the moving platforms
+	patchFile(*outputFile, 0x1A4B0, createDuplicateValueSlice(0xFF, 0x80))
+	patchFile(*outputFile, 0x1AE3B, createDuplicateValueSlice(0xFF, 0x80))
+	
+	// change how we load doors to read from a space that we can write to
+	patchFile(*outputFile, 0x8066, []byte{0x00, 0x61})
+
 }
 
+func createDuplicateValueSlice(value byte, repeatedNum int) []byte {
+	var result []byte
+	for i := 0; i < repeatedNum; i++ {
+		result = append(result, value)
+	}
+	return result
+}
 func copyFile(src string, dst string) (int64, error) {
 	sourceFileStat, err := os.Stat(src)
 	if err != nil {

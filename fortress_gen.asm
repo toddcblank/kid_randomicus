@@ -4,16 +4,16 @@
 ; so a room is encoded as:
 ; (where U = UP, R = RIGHT, D = DOWN, L = LEFT)
 ;FROM U     R     D     L
-;TO   URDL  URDL  URDL  URDL
+;TO   LDRU  LDRU  LDRU  LDRU
 ;
 ; So a room encoded as:
 ; 0111 0110 0010 0011
 ;
 ; Would be a room where
-; ;rom the top you can only go R, D, or L
+; ;rom the top you can only go U, R, or D
 ; from R can only go R or D
-; from D can only go D
-; from L can go D or L
+; from D can only go R
+; from L can go U or R
 ;
 ; and this room's potential exits would be listed as:
 ; 76 23
@@ -68,6 +68,8 @@ EXISTING_EXITS				equ $007F
 
 DUNGEON_SEED_LB				equ $00B0
 DUNGEON_SEED_RB				equ $00B1
+
+CURRENT_LEVEL_IDX			equ $00A0
 
 org FORTRESS_ROOMS_CONNECTIONS
 db $00, $00, $00, $00; room 00 - not a real room
@@ -201,7 +203,20 @@ STA ROOM_PATH_START, Y
 INC ROOM_PATH_IDX
 DEC ROOM_COUNT
 BNE newroom:
+; room count has hit zero, time to place the boss, maybe
+; first we have some 1-off logic for world 2 fortress
+LDA CURRENT_LEVEL_IDX
+CMP #$05
+BEQ check_for_up_in_w2_boss
 JMP placeboss			;if we've placed the right number of moves, we jump to placing the boss
+check_for_up_in_w2_boss:
+LDA NEED_EXIT
+CMP #$01
+BEQ keep_going_for_w2
+JMP placeboss
+keep_going_for_w2:
+; keep adding rooms if we went up and tried to place the boss
+INC ROOM_COUNT
 
 room_exists:
 ; get the existing exits.  if we have other valid, non used exits we want to pick one of those
@@ -370,6 +385,8 @@ jsr prng
 AND #$3F
 CMP #$29	; we have 29 possible rooms 0-29, but 29 is the boss room
 BPL pickroom
+CMP #$0B
+BEQ pickroom
 STA ROOM_ID
 
 ; multiply by 4 since we have 4 bytes per room
@@ -391,6 +408,12 @@ placeboss:
 LDA ROOM_OFFSET
 TAY
 LDA #$29
+LDX CURRENT_LEVEL_IDX
+CPX #$05 ; A0 == 05 means that we're in dungeon 2
+BNE writebossroom
+LDA #$0B
+
+writebossroom:
 STA DUNGEON_START, Y
 INY
 LDA #$00
@@ -444,11 +467,16 @@ populateenemies:
 	JMP storeenemy
 	spike20:
 	CMP #$20				; Spike room 20
-	BNE boosroom
+	BNE bossroom
 	LDA #$52
 	JMP storeenemy
-	boosroom:
+	bossroom:
 	CMP #$29				; Boss Room
+	BNE bossroom2
+	LDA #$F0
+	JMP storeenemy
+	bossroom2:
+	CMP #$0B
 	BNE pickenemy
 	LDA #$F0
 	JMP storeenemy
@@ -466,7 +494,9 @@ populateenemies:
 	; should now have 1-4 in the top nibble
 	STA ENEMY_TEMP_STORAGE
 	JSR prng
-	AND #$07
+	AND #$03
+	CLC
+	ADC #$04
 	ORA ENEMY_TEMP_STORAGE
 	INC ENEMY_TEMP_STORAGE
 	
