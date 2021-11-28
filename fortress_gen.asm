@@ -35,9 +35,9 @@ ENEMY_START					equ $712F
 FORTRESS_SIZE				equ	#$20
 
 ; for music
-FORT1_BOSS_IDX				equ	$CB90
-FORT2_BOSS_IDX				equ	$CB91
-FORT3_BOSS_IDX				equ	$CB92
+FORT1_BOSS_IDX				equ	$00D0
+FORT2_BOSS_IDX				equ	$00D1
+FORT3_BOSS_IDX				equ	$00D2
 
 ; varibale holders
 ROOM_COUNT					equ	$0070
@@ -419,12 +419,26 @@ INY
 LDA #$00
 STA DUNGEON_START, Y
 
-; fix boss music, this breaks stuff somehow?!?
+; fix boss music
 DEY
 TYA
 LSR A
-;STA FORT1_BOSS_IDX
 
+CPX #$07
+BNE fortress2music
+STA FORT3_BOSS_IDX
+JMP donewithmusic
+
+fortress2music:
+CPX #$05
+BNE fortress1music
+STA FORT2_BOSS_IDX
+JMP donewithmusic
+
+fortress1music:
+STA FORT1_BOSS_IDX
+
+donewithmusic:
 jsr populateenemies
 RTS
 

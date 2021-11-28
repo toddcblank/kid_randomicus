@@ -185,6 +185,9 @@ func main() {
 	patchFile(*outputFile, 0x1524C, []byte{0xD0})
 	patchFile(*outputFile, 0x1E21B, []byte{0xD0})
 	
+	// Change where we read the boss music index so that it's in RAM that we can write to
+	patchFile(*outputFile, 0x1CB8E, []byte{0xD0, 0x00})
+	
 	// Patch out all the centurions
 	patchFile(*outputFile, 0x1B2C4, createDuplicateValueSlice(0xFF, 58))
 	patchFile(*outputFile, 0x1B5B8, createDuplicateValueSlice(0xFF, 66))
