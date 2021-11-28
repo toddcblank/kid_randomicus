@@ -7,17 +7,23 @@ For World 1 & World 3 the asm replaces the routine that copies the level data an
 
 For the fortresses I generate a path so that they should be completable from any room that you can get to.  This does not count going into the corner of a room that is a deadend in and of itself, so don't go anywhere that you shouldn't =)
 
-
 It also contains a shell script that lets you easily move around where in the rom the code lives, and builds the asm and patches the rom using the go program.
 
 The go file is used to automate the patching of a Kid Icarus rom for the couple dozen patches that the romhack requires.
 
+There's also a utility go file that will print out the fortress given a string of bytes that represent the fortress (128 bytes starting at location $70AF)
+
 Specifically it randomizes:
 * The screens in the scrolling levels.  These will be randomized every load, which means it'll change on death
-* Doors in World 1 & World 3.  There's no guarentee on the number or types of rooms you'll find
+* Doors in World 1 & World 3.  There's no guarantee on the number or types of rooms you'll find
 * Doors in World 2 will always be the same, and always at the end of the levels (Strength Upgrade in 2-1, Challenge room in 2-2, and Black Market in 2-3)
 * Fortresses - These are randomized once per playthrough, so if you die they will remain the same
 * Enemies in Fortresses - If you see Eggplant Wizards be careful!  There might not be a hospital!
+
+Things I did not randomize:
+* The item locations
+* The enemies in the scrolling worlds
+* World 4
 
 Quality of Life Patches:
 * Removed the hidden score requirement for upgrade rooms
