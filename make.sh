@@ -37,6 +37,9 @@ sed -i "s/ROOM_ADDRESSES\(\s*\)equ\(\s*\)ROOM_RULES_DATA + [^;]*;/ROOM_ADDRESSES
 # build the asm
  ./asm6f_64.exe autogenlvl1.asm
  ./asm6f_64.exe fortress_gen.asm
+ ./asm6f_64.exe lvl2-data.asm
+ ./asm6f_64.exe lvl2gen.asm
+ 
 # call the applypatch.go with the start location
 jumpLoc=$(($offsetCPU + $ruleDataLenDec + $roomAddrLenDec + $doorDataLenDec))
 dungJumpLoc=$(($offsetCPUD + ($dungeonRooms * 4)))

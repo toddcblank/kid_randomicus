@@ -1,0 +1,181 @@
+.enemyImage {
+    z-index: 2;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 256px;
+}
+
+.roomImage.full {
+    width: 256px;
+    height: 192px;
+}
+
+.room {
+    width: 128px;
+    height: 96px;
+    display: inline-block;
+    
+    
+    border-color: red;
+    border-width: 2px;
+    border-style: solid;
+
+    position: relative;
+}
+
+.password {
+    width: 256px;
+}
+.row {
+    display: block;
+}
+
+.maze {
+    display: grid;
+    grid-template-columns: repeat(8, 132px);
+    grid-template-rows: repeat(8, 100px);
+}
+
+
+.roomImage {
+    width: 128px;
+    z-index:   1;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.opening-img {
+    z-index: 2;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 128px;
+}
+
+.open-01 {
+    border-top-color: white;
+    border-bottom-color: red;
+    border-right-color: red;
+    border-left-color: red;
+}
+
+.open-02 {
+    border-top-color: red;
+    border-right-color: white;
+    border-bottom-color: red;
+    border-left-color: red;
+}
+
+.open-03 {
+    border-top-color: white;
+    border-right-color: white;
+    border-bottom-color: red;
+    border-left-color: red;
+}
+
+.open-04 {
+    border-top-color: red;
+    border-right-color: red;
+    border-bottom-color: white;
+    border-left-color: red;
+}
+.open-05 {
+    border-top-color: white;
+    border-right-color: red;
+    border-bottom-color: white;
+    border-left-color: red;
+}
+.open-06 {
+    border-top-color: red;
+    border-right-color: white;
+    border-bottom-color: white;
+    border-left-color: red;
+}
+
+.open-07 {
+    border-top-color: white;
+    border-right-color: white;
+    border-bottom-color: white;
+    border-left-color: red;
+}
+
+.open-08 {
+    border-top-color: red;
+    border-right-color: red;
+    border-bottom-color: red;
+    border-left-color: white;
+}
+.open-09 {
+    border-top-color: white;
+    border-right-color: red;
+    border-bottom-color: red;
+    border-left-color: white;
+}
+.open-0a {
+    border-top-color: red;
+    border-right-color: white;
+    border-bottom-color: red;
+    border-left-color: white;
+}
+.open-0b {
+    border-top-color: white;
+    border-right-color: white;
+    border-bottom-color: red;
+    border-left-color: white;
+}
+.open-0c {
+    border-top-color: red;
+    border-right-color: red;
+    border-bottom-color: white;
+    border-left-color: white;
+}
+.open-0d {
+    border-top-color: white;
+    border-right-color: red;
+    border-bottom-color: white;
+    border-left-color: white;
+}
+.open-0e {
+    border-top-color: red;
+    border-right-color: white;
+    border-bottom-color: white;
+    border-left-color: white;
+}
+.open-0f {
+    border-top-color: white;
+    border-right-color: white;
+    border-bottom-color: white;
+    border-left-color: white;
+}
+
+
+.vertical-level {
+    display: grid;
+    grid-template-columns: repeat(6, 128px);
+    grid-template-rows: repeat(44, auto);
+}
+
+.levelScreen {
+    height: 120px;
+    width: 128px;
+}
+
+.vertImage {
+    height: 120px;
+    width: 128px;
+}
+
+.horizontal-level {
+    display: grid;
+    grid-template-rows: 128px 128px 128px;
+}
+
+.levelRow {
+    display: grid;
+    grid-template-rows: 128px;
+    grid-template-columns: repeat(35, 128px);
+    padding-bottom: 8px;
+}
+

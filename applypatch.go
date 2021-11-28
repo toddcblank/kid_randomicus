@@ -87,9 +87,77 @@ func main() {
 		fmt.Printf("Error reading in price change patch: %s", err)
 		return
 	}
-
+	
+	lvl2JumpBytes, err := ioutil.ReadFile("lvl2-hijack.bin")
+	if err != nil {
+		fmt.Printf("Error reading in lvl 2 hijack patch: %s", err)
+		return
+	}
+	
+	lvl2Data, err := ioutil.ReadFile("lvl2-data.bin")
+	if err != nil {
+		fmt.Printf("Error reading in lvl 2 data: %s", err)
+		return
+	}
+	
+	lvl2Randomizer, err := ioutil.ReadFile("lvl2gen.bin")
+	if err != nil {
+		fmt.Printf("Error reading in lvl 2 randomizer patch: %s", err)
+		return
+	}
 	if _, err := copyFile(*inputFile, *outputFile); err != nil {
 		fmt.Printf("Error copying inpute file to output file: %s", err)
+		return
+	}
+	
+	titleTextAlphabet, err := ioutil.ReadFile("title-screen-alphabet.bin")
+	if err != nil {
+		fmt.Printf("Error reading patch: %s", err)
+		return
+	}
+	
+	titleText1, err := ioutil.ReadFile("title-text-line1.bin")
+	if err != nil {
+		fmt.Printf("Error reading patch: %s", err)
+		return
+	}
+	
+	titleText2, err := ioutil.ReadFile("title-text-line2.bin")
+	if err != nil {
+		fmt.Printf("Error reading patch: %s", err)
+		return
+	}
+	
+	titleText3, err := ioutil.ReadFile("title-text-line3.bin")
+	if err != nil {
+		fmt.Printf("Error reading patch: %s", err)
+		return
+	}
+	
+	titleText4, err := ioutil.ReadFile("title-text-line4.bin")
+	if err != nil {
+		fmt.Printf("Error reading patch: %s", err)
+		return
+	}
+	
+	endingText1, err := ioutil.ReadFile("ending-text-line1.bin")
+	if err != nil {
+		fmt.Printf("Error reading patch: %s", err)
+		return
+	}
+	endingText2, err := ioutil.ReadFile("ending-text-line2.bin")
+	if err != nil {
+		fmt.Printf("Error reading patch: %s", err)
+		return
+	}
+	endingTextUrl, err := ioutil.ReadFile("ending-text-url.bin")
+	if err != nil {
+		fmt.Printf("Error reading patch: %s", err)
+		return
+	}
+	endingTextSlash, err := ioutil.ReadFile("ending-text-slash.bin")
+	if err != nil {
+		fmt.Printf("Error reading patch: %s", err)
 		return
 	}
 
@@ -101,6 +169,9 @@ func main() {
 	patchFile(*outputFile, 0x1B840, enemyPositionBytes)
 	patchFile(*outputFile, 0x18ABE, removeUpgradeReqBytes)
 	patchFile(*outputFile, 0x1EFB2, adjustPricesBytes)
+	patchFile(*outputFile, 0xAE37, lvl2JumpBytes)
+	patchFile(*outputFile, 0x1F910, lvl2Data)
+	patchFile(*outputFile, 0x1F710, lvl2Randomizer)
 	
 	patchFile(*outputFile, 0x1F190, doorPatchBytes)
 	// patchFile(*outputFile, 0x1EFD9, doorPatchBytes)
@@ -122,10 +193,32 @@ func main() {
 	// patch out all the moving platforms
 	patchFile(*outputFile, 0x1A4B0, createDuplicateValueSlice(0xFF, 0x80))
 	patchFile(*outputFile, 0x1AE3B, createDuplicateValueSlice(0xFF, 0x80))
+	patchFile(*outputFile, 0xBDC3, createDuplicateValueSlice(0xFF, 0x80))
 	
 	// change how we load doors to read from a space that we can write to
 	patchFile(*outputFile, 0x8066, []byte{0x00, 0x61})
-
+	patchFile(*outputFile, 0xC066, []byte{0x00, 0x61})
+	// for level 2 we don't randomize doors because reasons
+	patchFile(*outputFile, 0x1F00F, []byte{
+		0x00, 27, 0xAA, 0x24,
+		0x01, 27, 0xAA, 0x23,
+		0x02, 27, 0xAA, 0x26,
+		0xFF, 0xFF,
+	})
+	
+	// text patches
+	// Add alphabet to title screen
+	patchFile(*outputFile, 0x3d30, titleTextAlphabet)
+	patchFile(*outputFile, 0x63c3, titleText1)
+	patchFile(*outputFile, 0x63e3, titleText2)
+	patchFile(*outputFile, 0x6402, titleText3)
+	patchFile(*outputFile, 0x6422, titleText4)
+	
+	// ending text	
+	patchFile(*outputFile, 0x10264, endingText1)
+	patchFile(*outputFile, 0x110E6, endingText2)
+	patchFile(*outputFile, 0x11116, endingTextUrl)
+	patchFile(*outputFile, 0x1120, endingTextSlash)
 }
 
 func createDuplicateValueSlice(value byte, repeatedNum int) []byte {

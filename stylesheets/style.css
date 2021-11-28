@@ -1,0 +1,34 @@
+body {
+  padding: 50px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  /* background-image: url('../images/site/background.png'); */
+  background: black;
+  color: white;
+  text-shadow:
+		-1px -1px 0 #000,
+		1px -1px 0 #000,
+		-1px 1px 0 #000,
+		1px 1px 0 #000;
+}
+
+h1 {
+  text-align: center;
+}
+
+a {
+  color: #00B7FF;
+}
+
+.spoilerList {
+  display: grid;
+  width: 50%;
+  grid-template-columns: 1fr 1fr;
+}
+
+.footer {
+  /*I'm commenting this out because it causes 
+    problems on lower resolution screens  
+    position: fixed;
+    bottom: 0; */
+  width: 100%;
+}

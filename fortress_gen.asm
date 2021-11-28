@@ -84,12 +84,12 @@ db $0E, $EE, $0E, $07; room 07 - 0000 1110 1110 1110
 
 db $E6, $6E, $0F, $08; room 08 - 1110 0110 0110 1110
 db $00, $00, $00, $09; room 09 - this is replaced, need to find the original
-db $F2, $6F, $0F, $0A; room 0A - 1011 0010 0110 1011
+db $B2, $6B, $0F, $0A; room 0A - 1011 0010 0110 1011
 db $80, $08, $09, $0B; room 0B - 1000 0000 0000 1100 (2-4 boss room)
 
 db $FF, $FF, $0F, $0C; room 0C - 1111 1111 1111 1111
 db $00, $00, $00, $0D; room 0D - this is replaced, need to find the original
-db $33, $BB, $0F, $0E; room 0E - 0011 0011 1100 1100 (or 1111 1111 1100 1100 with wall clips)
+db $33, $CC, $0F, $0E; room 0E - 0011 0011 1100 1100 (or 1111 1111 1100 1100 with wall clips)
 db $FF, $FF, $0F, $0F; room 0F - 0111 0111 0111 0000
 
 db $00, $00, $00, $10; room 10 - non-existant
@@ -147,12 +147,12 @@ loop:
 ; zero out the dungeon we copied
 zerodungeon:
   LDA #$00
-  LDY #$CF
+  LDY #$BF
 cleardungeon:
   STA DUNGEON_START, Y
   DEY
   BNE cleardungeon
-LDA #$00
+STA DUNGEON_START, Y	;do the last room
 STA PATH_IDX
 STA ROOM_PATH_IDX
 LDA #$FF
@@ -438,7 +438,7 @@ populateenemies:
 	TAX
 	LDA DUNGEON_START, X
 	BEQ nextroom
-	CMP #$01
+	CMP #$01				; starting room, no enemies
 	BEQ nextroom
 	CMP #$15
 	BEQ nextroom
@@ -481,8 +481,16 @@ populateenemies:
 	LDA #$F0
 	JMP storeenemy
 	
-	; need to pick a random enemy	TODO: eggplant wizards
+	; pick a random enemy 1 in 8 chance of Eggplant
 	pickenemy:
+	JSR prng
+	AND #$07
+	BNE normalenemy
+	eggplantwizard:
+	LDA #$63
+	JMP storeenemy
+	
+	normalenemy:
 	JSR prng
 	AND #$03				; random enemies are 0x1_, 0x2_, 0x3_, and 0x4_
 	CLC
@@ -498,7 +506,6 @@ populateenemies:
 	CLC
 	ADC #$04
 	ORA ENEMY_TEMP_STORAGE
-	INC ENEMY_TEMP_STORAGE
 	
 	storeenemy:
 	LDY ENEMY_PLACEMENT_IDX
@@ -506,7 +513,10 @@ populateenemies:
 	
 	nextroom:
 	DEC ENEMY_PLACEMENT_IDX
-	BNE iterate_rooms
+	BEQ done
+	JMP iterate_rooms
+	
+	done:
 	RTS
 	
 

@@ -1,0 +1,36 @@
+.legend {
+    display: grid;
+    grid-template-columns: 24px 48px;
+    gap: 2px;
+}
+
+.leftcol {
+    display: grid;
+    grid-template-rows: 256px 1fr;
+}
+
+.editor {
+    display: grid;
+    grid-template-columns: 300px 140px 140px
+}
+
+.itemDescription {
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+.controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    width: 256px;
+    text-align: center;
+}
+
+.room {
+    border-style: solid;
+    border-color: black;
+    width: 256px;
+    height: 192px;
+    position: relative;
+    background: black;
+}

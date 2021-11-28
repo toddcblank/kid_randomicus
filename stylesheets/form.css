@@ -1,0 +1,47 @@
+
+.dungeon-settings {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1fr 2fr 2fr 1fr;
+    grid-template-rows: repeat(8, 25px);
+    grid-gap: 5px;
+    text-align: right;
+}
+
+.form {
+    width: 800px;
+    margin: auto;
+
+}
+.form-group {
+    display: grid;
+    grid-auto-rows: 29px;
+    grid-template-columns: 2fr .1fr 8fr;
+    border-style: solid;
+    padding-bottom: 5px;
+    padding-top: 5px;
+    grid-gap: 3px;
+    border-radius: 16px;
+
+}
+
+.form-group.seed {
+    grid-template-columns: 520px 158px;
+    grid-auto-rows: 29px;
+    text-align: left;
+    padding-left: 5%;
+    background: darkmagenta;
+}
+
+.form-element {
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+.form-group.submit {
+    grid-template-columns: 1fr;
+    padding-left: 10%;
+    padding-right: 10%;
+    text-align: left;
+    background: green;
+    grid-template-rows: 29px;    
+}

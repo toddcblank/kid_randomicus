@@ -58,15 +58,17 @@ LVL_3_1_SIZE 		equ		#$14
 LVL_3_2_SIZE		equ		#$17
 LVL_3_3_SIZE		equ		#$1F
 
-FRAME_COUNT 		equ		$0014
-INITIAL_SEED_LB		equ		$00EF
-INITIAL_SEED_RB		equ		$00F0
-END_ROOM_LVL_1		equ		#$39 ; Room 32, it has the highest likelyhood of allowing access
-END_ROOM_LVL_1HB	equ		#$70 ; high order byte of Room 32
-END_ROOM_LVL_3		equ		#$2D ; Room 14, it has the highest likelyhood of allowing access
-END_ROOM_LVL_3HB	equ		#$70 ; high order byte of Room 14 in world 3
-LVL_1_START_ROOM	equ		#$21
-LVL_3_START_ROOM	equ		#$2D
+FRAME_COUNT 			equ		$0014
+INITIAL_SEED_LB			equ		$00EF
+INITIAL_SEED_RB			equ		$00F0
+END_ROOM_LVL_1			equ		#$39 ; Room 32, it has the highest likelyhood of allowing access
+END_ROOM_LVL_1HB		equ		#$70 ; high order byte of Room 32
+END_ROOM_LVL_3			equ		#$2D ; Room 14, it has the highest likelyhood of allowing access
+END_ROOM_LVL_3HB		equ		#$70 ; high order byte of Room 14 in world 3
+END_ROOM_BACKUP_LVL_3	equ		#$66 ; Room 15, it works for the 1 room that doesn't work for 14
+END_ROOM_BACKUP_LVL_3HB	equ		#$70 ; high order byte of Room 15 in world 3
+LVL_1_START_ROOM		equ		#$21
+LVL_3_START_ROOM		equ		#$2D
 
 ; datablock screenrules
 org ROOM_RULES_DATA
@@ -432,6 +434,7 @@ chooseroom:
 	JSR prng
 	AND IDX_OFFSET_MAX_PARAM ; trim to 0-31 or 0-15
 	CLC
+	STA ROOM_BIT
 	ADC IDX_OFFSET_PARAM ; add 1 or 33 so it's 1 - 32 or 33 - 49
 	CLC
 	LDY Y_STORAGE
@@ -441,6 +444,8 @@ chooseroom:
 	; room rules are sets of 8 bits, so we need to find
 	; the right 8 bits by subtracting 8 until we're under 8
 	; and shifting right in our room rules
+	INC ROOM_BIT
+	LDA ROOM_BIT
 getroomrule:
 	CMP #$08	
 	BMI setindex
@@ -480,6 +485,26 @@ writeexit:
 	;	0110 1110 ; 9 - 16
 	;	0110 0100 ; 17 - 24
 	;	0100 1000 ; 25 - 27, 34 - 38
+	LDA LEVEL_INDEX
+	CMP #$06
+	BNE lvl1exit
+	LDA ROOM_BIT
+	CMP #$0B
+	BEQ backupLvl3Room
+	LDA END_ROOM_LVL_3
+	STA LVL_GEN_END_ROOM_ADDR_PARAM
+	LDA END_ROOM_LVL_3HB
+	STA LVL_GEN_END_ROOM_ADDR_PARAM + 1
+	JMP writeexitaddress
+	
+	backupLvl3Room:
+	LDA END_ROOM_BACKUP_LVL_3
+	STA LVL_GEN_END_ROOM_ADDR_PARAM
+	LDA END_ROOM_BACKUP_LVL_3HB
+	STA LVL_GEN_END_ROOM_ADDR_PARAM + 1
+	JMP writeexitaddress
+	
+	lvl1exit:
 	LDA POTENTIAL
 	LDX #$65
 	
