@@ -55,8 +55,8 @@ LVL_1_2_SIZE		equ		#$19
 LVL_1_3_SIZE		equ		#$25
 
 LVL_3_1_SIZE 		equ		#$14
-LVL_3_2_SIZE		equ		#$17
-LVL_3_3_SIZE		equ		#$1F
+LVL_3_2_SIZE		equ		#$18
+LVL_3_3_SIZE		equ		#$1E
 
 FRAME_COUNT 			equ		$0014
 INITIAL_SEED_LB			equ		$00EF
@@ -65,7 +65,7 @@ END_ROOM_LVL_1			equ		#$39 ; Room 32, it has the highest likelyhood of allowing 
 END_ROOM_LVL_1HB		equ		#$70 ; high order byte of Room 32
 END_ROOM_LVL_3			equ		#$2D ; Room 14, it has the highest likelyhood of allowing access
 END_ROOM_LVL_3HB		equ		#$70 ; high order byte of Room 14 in world 3
-END_ROOM_BACKUP_LVL_3	equ		#$66 ; Room 15, it works for the 1 room that doesn't work for 14
+END_ROOM_BACKUP_LVL_3	equ		#$00 ; Room 13, it works for the 1 room that doesn't work for 14
 END_ROOM_BACKUP_LVL_3HB	equ		#$70 ; high order byte of Room 15 in world 3
 LVL_1_START_ROOM		equ		#$21
 LVL_3_START_ROOM		equ		#$2D
@@ -257,11 +257,17 @@ loop:
   BNE loop                
 
 	; seed our rng
-	LDA INITIAL_SEED_LB	
+	LDA INITIAL_SEED_LB
+	BNE storerng_lb
+	LDA #$BE
+	storerng_lb:
 	STA STORE_SEED_LB
 	STA RNG_SEED
 	
 	LDA INITIAL_SEED_RB
+	BNE storerng_rb
+	LDA #$EF
+	storerng_rb
 	STA RNG_SEED_RB
 	STA STORE_SEED_RB
 	
@@ -425,6 +431,34 @@ placedoor:
 	AND #$07
 	CLC
 	ADC #$20
+	LDY LEVEL_INDEX
+	
+	CMP #$20
+	BNE handleDoor21
+	; for 20 we're ok in w1 but not w3
+	CPY #$02
+	BEQ storedoorvalue
+	CLC
+	ADC #$04
+	JMP storedoorvalue
+	
+	handleDoor21:
+	CMP #$21
+	BNE handleDoor27
+	CLC
+	ADC #$03
+	JMP storedoorvalue
+	
+	handleDoor27:
+	CMP #$27
+	; for 27 we're ok in w3, but not w1
+	CPY #$06
+	BEQ storedoorvalue
+	SEC
+	SBC #$03
+	CLC
+	
+	storedoorvalue:
 	STA DOOR_PATCH_LOC, X
 	INC DOOR_COUNT
 	
@@ -488,8 +522,8 @@ writeexit:
 	LDA LEVEL_INDEX
 	CMP #$06
 	BNE lvl1exit
-	LDA ROOM_BIT
-	CMP #$0B
+	LDA POTENTIAL
+	CMP #$2C
 	BEQ backupLvl3Room
 	LDA END_ROOM_LVL_3
 	STA LVL_GEN_END_ROOM_ADDR_PARAM
@@ -532,11 +566,12 @@ getexitrule:
 bitcheck_exit:
 	STX ROOM_RULE
 	STA ROOM_BIT
-	LDA #$80
+	LDA #$80 
+	CLC
 
 bitcheck_loop_exit:
 	DEC ROOM_BIT
-	BEQ compareexit 
+	BEQ compareexit
 	ROR A				; shift accumulator bit over
 	BNE bitcheck_loop_exit
 	

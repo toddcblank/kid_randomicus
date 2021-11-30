@@ -49,10 +49,19 @@ CMP #$00
 BNE storeroom
 
 ; seed our rng on the first screen of the first level
-LDA INITIAL_SEED_LB	
-STA RNG_SEED
-LDA INITIAL_SEED_RB
-STA STORE_SEED_RB
+	LDA INITIAL_SEED_LB
+	BNE storerng_lb
+	LDA #$BE
+	storerng_lb:
+	STA STORE_SEED_LB
+	STA RNG_SEED
+	
+	LDA INITIAL_SEED_RB
+	BNE storerng_rb
+	LDA #$EF
+	storerng_rb
+	STA RNG_SEED_RB
+	STA STORE_SEED_RB
 CLC
 BCC storeroom
 
@@ -71,11 +80,14 @@ JSR prng
 AND #$1F
 STA POTENTIAL
 INC POTENTIAL
+LDA POTENTIAL
 
 getroomrulebitindex:
 	CMP #$08
 	BMI setindex
 	INC SRL_WORK
+	SBC #$08
+	JMP getroomrulebitindex
 
 setindex:
 	; now that we have the offset stored in SRL_WORK
@@ -89,7 +101,7 @@ setindex:
 	
 bitcheck_loop:
 	DEC ROOM_BIT
-	BMI compareroom 
+	BEQ compareroom 
 	ROR A				; shift accumulator bit over
 	BNE bitcheck_loop
 
