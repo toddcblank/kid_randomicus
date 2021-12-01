@@ -37,6 +37,5 @@ Things I had to remove because I didn't want to deal with them
 * Centurions in Fortresses - their default placement would sometimes block exits that I don't account for in the fortress generation
 
 Known Bugs:
-* Pot Rooms in world 3 are jumbled
 * You can jump over the exit screens in World 2, I suggest you refrain from doing so
 
