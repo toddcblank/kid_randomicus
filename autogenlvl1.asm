@@ -427,6 +427,7 @@ placedoor:
 	STA DOOR_PATCH_LOC, X
 ;	
 	INX
+	pickadoor:
 	JSR prng	
 	AND #$07
 	CLC
@@ -437,9 +438,7 @@ placedoor:
 	BNE handleDoor21
 	; for 20 we're ok in w1 but not w3
 	CPY #$02
-	BEQ storedoorvalue
-	CLC
-	ADC #$04
+	BNE pickadoor
 	JMP storedoorvalue
 	
 	handleDoor21:
@@ -452,11 +451,9 @@ placedoor:
 	handleDoor27:
 	CMP #$27
 	; for 27 we're ok in w3, but not w1
+	BNE storedoorvalue
 	CPY #$06
-	BEQ storedoorvalue
-	SEC
-	SBC #$03
-	CLC
+	BNE pickadoor
 	
 	storedoorvalue:
 	STA DOOR_PATCH_LOC, X
