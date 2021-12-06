@@ -58,6 +58,12 @@ func main() {
 		return
 	}
 
+	horizontalScreenDataBytes, err := ioutil.ReadFile("horizontalScreenData.bin")
+	if err != nil {
+		fmt.Printf("Error reading in horizontal scrolling level data: %s", err)
+		return
+	}
+
 	dungeonGenBytes, err := ioutil.ReadFile("fortress_gen.bin")
 	if err != nil {
 		fmt.Printf("Error reading in dungeon generation patch: %s", err)
@@ -163,6 +169,7 @@ func main() {
 
 	patchFile(*outputFile, 0x0198F2, jumpBytes)
 	patchFile(*outputFile, *autogenOffset, autoGenBytes)
+	patchFile(*outputFile, 0x01FA10, horizontalScreenDataBytes)
 	patchFile(*outputFile, *autoGenDungeonOffset, dungeonGenBytes)
 	patchFile(*outputFile, 0x1B278, enemyPositionBytes)
 	patchFile(*outputFile, 0x1B56C, enemyPositionBytes)
