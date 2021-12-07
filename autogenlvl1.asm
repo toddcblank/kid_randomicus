@@ -43,6 +43,8 @@ IDX_OFFSET_MAX_PARAM		equ	$00CA
 DOOR_COUNT					equ	$00CC
 CURR_LEVEL					equ	$00CE
 
+ENEMY_VALUES				equ	$0090
+
 
 ; ROOM_RULES_DATA is the start of our .bin, everything else that we
 ; reference should be offset from it based on the size of the data
@@ -50,7 +52,6 @@ CODE_START_LOC		equ		$B9F0
 ROOM_RULES_DATA 	equ		$FA00
 ROOM_ADDRESSES 		equ		ROOM_RULES_DATA + 196; $BE84 ; this is the first byte of the address.  add 2 per room to get the room
 DOOR_DATA			equ		ROOM_ADDRESSES + 98
-ROUTINE_START 		equ		ROOM_ADDRESSES + 004E ; $BECC - we don't actually use this here
 LVL_1_1_SIZE 		equ		#$15
 LVL_1_2_SIZE		equ		#$19
 LVL_1_3_SIZE		equ		#$25
@@ -70,6 +71,32 @@ END_ROOM_BACKUP_LVL_3	equ		#$00 ; Room 13, it works for the 1 room that doesn't 
 END_ROOM_BACKUP_LVL_3HB	equ		#$70 ; high order byte of Room 15 in world 3
 LVL_1_START_ROOM		equ		#$21
 LVL_3_START_ROOM		equ		#$2D
+
+ENEMY_TABLE1_W1			equ		$7CD6
+ENEMY_TABLE2_W1			equ		$7D0B
+ENEMY_TABLE3_W1			equ		$7D40
+ENEMY_TABLE4_W1			equ		$7D75
+
+ENEMY_TABLE1_W3			equ		$77E7
+ENEMY_TABLE2_W3			equ		$7821
+ENEMY_TABLE3_W3			equ		$785B
+ENEMY_TABLE4_W3			equ		$7895
+
+ENEMY_NONE          equ #$00      ;empty
+
+ENEMY_SHEMUN        equ #$02      ;snakes
+ENEMY_MCGOO         equ #$03      ;slime
+ENEMY_NETTLER       equ #$05      ;frogs
+ENEMY_MONOEYE       equ #$08      ;medium flying enemy
+ENEMY_COMMYLOOSE    equ #$0A      ;octopus
+ENEMY_REAPER        equ #$0D      ;reaper
+
+ENEMY_HOLER			equ #$03;     ;Slime
+ENEMY_KOMAYTO		equ #$08;     ;Metroid <3
+ENEMY_PLUTONFLY		equ #$07;     ;Pluton Fly (thief)
+ENEMY_OCTOS			equ #$0A;     ;Octopus
+ENEMY_COLLIN		equ #$0B;     ;Patra
+ENEMY_KEEPAH		equ #$0C;     ;Ridley (this messes up some stuff, and shouldn't be used =/)
 
 org CODE_START_LOC
 original:
@@ -444,8 +471,280 @@ writeexitaddress:
 	INX
 	STA DOOR_PATCH_LOC, X
 	exiting:
+	LDA LEVEL_INDEX
+	
+	;enemies, I could probably do this more effeciently but for now should be fine
+	CMP #$06
+	BNE w1enemies
+	
+	w3enemies:	
+	JSR randomizeEnemiesW3
+	RTS
+	
+	w1enemies:
+	JSR randomizeEnemiesW1
 	RTS 			; we're done here
 
+randomizeEnemiesW1:
+
+	table1_w1:
+	LDX #$2E
+	LDY #$00
+	; set up possible enemies for first table, we use 16 bytes for possible enemies to control RNG
+	LDA ENEMY_NETTLER
+	STA ENEMY_VALUES
+	STA ENEMY_VALUES + 1
+	
+	LDA ENEMY_MONOEYE
+	STA ENEMY_VALUES + 2
+	STA ENEMY_VALUES + 3
+	STA ENEMY_VALUES + 4
+	STA ENEMY_VALUES + 5
+	
+	LDA ENEMY_COMMYLOOSE
+	STA ENEMY_VALUES + 6
+	STA ENEMY_VALUES + 7
+	STA ENEMY_VALUES + 8
+	STA ENEMY_VALUES + 9
+	STA ENEMY_VALUES + 10
+	STA ENEMY_VALUES + 11
+	
+	LDA ENEMY_NONE
+	STA ENEMY_VALUES + 12
+	STA ENEMY_VALUES + 13
+	
+	LDA ENEMY_REAPER
+	STA ENEMY_VALUES + 14
+	STA ENEMY_VALUES + 15
+
+	fillEnemies:
+	JSR pickEnemyRoutine
+	STA ENEMY_TABLE1_W1, X
+	CMP ENEMY_REAPER
+	BEQ reaperCoords
+	LDA #$00
+	STA ENEMY_TABLE2_W1, X
+	BEQ nextloop
+	
+	reaperCoords:
+	JSR prng
+	AND #$07
+	ADC #$40
+	CLC
+	STA ENEMY_TABLE2_W1, X
+	
+	nextloop:
+	DEX
+	BNE fillEnemies
+	
+	; 2nd table
+	LDX #$2E
+	LDY #$00
+	; set up possible enemies for second table, we use 16 bytes for possible enemies to control RNG
+	LDA ENEMY_MCGOO
+	STA ENEMY_VALUES
+	STA ENEMY_VALUES + 1
+	STA ENEMY_VALUES + 2
+	STA ENEMY_VALUES + 3
+	STA ENEMY_VALUES + 4
+	
+	LDA ENEMY_SHEMUN
+	STA ENEMY_VALUES + 5
+	STA ENEMY_VALUES + 6
+	STA ENEMY_VALUES + 7
+	STA ENEMY_VALUES + 8
+	STA ENEMY_VALUES + 9
+	STA ENEMY_VALUES + 10
+	
+	LDA ENEMY_NONE
+	STA ENEMY_VALUES + 11
+	STA ENEMY_VALUES + 12
+	STA ENEMY_VALUES + 13
+	
+	LDA ENEMY_REAPER
+	STA ENEMY_VALUES + 14
+	STA	ENEMY_VALUES + 15
+	
+	pickEnemy2:
+	; set up possible enemies for second table, we use 16 bytes for possible enemies to control RNG
+	JSR pickEnemyRoutine
+	STA ENEMY_TABLE3_W1, X
+	CMP ENEMY_REAPER
+	BEQ reaperCoords2
+	LDA #$00
+	STA ENEMY_TABLE4_W1, X
+	BEQ nextScreen
+	
+	reaperCoords2:
+	JSR prng
+	AND #$07
+	ADC #$C0
+	CLC
+	STA ENEMY_TABLE4_W1, X
+	
+	nextScreen:
+	DEX
+	BNE pickEnemy2
+	RTS
+	
+randomizeEnemiesW3:
+	LDX #$33
+	
+	LDA ENEMY_PLUTONFLY
+	STA ENEMY_VALUES
+	STA ENEMY_VALUES + 1
+	
+	LDA ENEMY_OCTOS
+	STA ENEMY_VALUES + 2
+	STA ENEMY_VALUES + 3
+	STA ENEMY_VALUES + 4
+	STA ENEMY_VALUES + 5
+
+	LDA ENEMY_KOMAYTO
+	STA ENEMY_VALUES + 6
+	STA ENEMY_VALUES + 7
+	STA ENEMY_VALUES + 8
+	
+	LDA ENEMY_COLLIN
+	STA ENEMY_VALUES + 9
+	STA ENEMY_VALUES + 10
+	STA ENEMY_VALUES + 11
+	
+	LDA ENEMY_NONE
+	STA ENEMY_VALUES + 12
+	STA ENEMY_VALUES + 13
+	
+	LDA ENEMY_REAPER
+	STA ENEMY_VALUES + 14
+	STA ENEMY_VALUES + 15
+	
+	fillEnemies_W3:
+	JSR pickEnemyRoutine
+	STA ENEMY_TABLE1_W3, X
+	CMP ENEMY_REAPER
+	BEQ reaperCoords_w3
+	LDA #$00
+	BEQ nextloop_w3
+	
+	reaperCoords_w3:
+	JSR prng
+	AND #$07
+	ADC #$40
+	CLC
+	
+	nextloop_w3:
+	STA ENEMY_TABLE2_W3, X
+	DEX
+	BNE fillEnemies_W3
+	
+	
+	LDX #$33
+	
+	; set up possible enemies for second table, we use 16 bytes for possible enemies to control RNG
+	LDA ENEMY_MCGOO
+	STA ENEMY_VALUES
+	STA ENEMY_VALUES + 1
+	STA ENEMY_VALUES + 2
+	STA ENEMY_VALUES + 3
+	STA ENEMY_VALUES + 4
+	
+	LDA ENEMY_SHEMUN
+	STA ENEMY_VALUES + 5
+	STA ENEMY_VALUES + 6
+	STA ENEMY_VALUES + 7
+	STA ENEMY_VALUES + 8
+	STA ENEMY_VALUES + 9
+	STA ENEMY_VALUES + 10
+	
+	LDA ENEMY_NONE
+	STA ENEMY_VALUES + 11
+	STA ENEMY_VALUES + 12
+	STA ENEMY_VALUES + 13
+	
+	LDA ENEMY_REAPER
+	STA ENEMY_VALUES + 14
+	STA ENEMY_VALUES + 15
+	
+	pickEnemy2_W3:
+	JSR pickEnemyRoutine
+	STA ENEMY_TABLE3_W3, X
+	CMP ENEMY_REAPER
+	BEQ reaperCoords2_w3
+	LDA #$00
+	STA ENEMY_TABLE4_W3, X
+	BEQ nextScreen_w3
+	
+	reaperCoords2_w3:
+	JSR prng
+	AND #$07
+	ADC #$C0
+	CLC
+	STA ENEMY_TABLE4_W3, X
+	
+	nextScreen_w3:
+	DEX
+	BNE pickEnemy2_W3
+	RTS
+	
+pickEnemyRoutine:
+	JSR prng
+	AND #$0F
+	TAY
+	LDA ENEMY_VALUES, Y
+	RTS
+
+pickEnemyW3:
+	JSR prng
+	
+	; Valid Enemies
+	; ENEMY_NONE          	equ #$00   empty
+	; ENEMY_HOLER			equ #$03   Slime
+	; ENEMY_PLUTONFLY		equ #$07   Pluton Fly (thief)
+	; ENEMY_KOMAYTO			equ #$08   Metroid <3
+	; ENEMY_OCTOS			equ #$0A   Octopus
+	; ENEMY_COLLIN			equ #$0B   Collin
+	; ENEMY_KEEPAH			equ #$0C   Ridley (this messes up some stuff, and shouldn't be used =/)
+	; ENEMY_REAPER			equ #$0D   reaper
+	; 7 options since we don't use Keepah
+	
+	AND #$07
+	BEQ exitEnemyPick_w3	; 0 == 0, we can exit
+	; 3 and 7 are valid, we'll just leave
+	CMP #$03
+	BEQ exitEnemyPick_w3
+	
+	CMP #$07
+	BEQ exitEnemyPick_w3
+	
+	metroid:
+	CMP #$01
+	BNE octos
+	LDA ENEMY_KOMAYTO
+	RTS
+
+	octos:
+	CMP #$02
+	BNE patra
+	LDA ENEMY_OCTOS
+	RTS
+	
+	patra:
+	CMP #$04
+	BNE reaper_w3
+	LDA ENEMY_COLLIN
+	RTS
+	
+	reaper_w3:
+	CMP #$05
+	BNE noenemyw3
+	LDA ENEMY_REAPER
+	RTS
+	
+	noenemyw3:
+	LDA ENEMY_NONE
+	
+	exitEnemyPick_w3:
+	RTS
 
 ; prng
 ;

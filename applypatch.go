@@ -229,6 +229,9 @@ func main() {
 	patchFile(*outputFile, 0x110E6, endingText2)
 	patchFile(*outputFile, 0x11116, endingTextUrl)
 	patchFile(*outputFile, 0x1120, endingTextSlash)
+	
+	// fast text in rooms
+	patchFile(*outputFile, 0x195F2, []byte{0x01})
 }
 
 func createDuplicateValueSlice(value byte, repeatedNum int) []byte {
