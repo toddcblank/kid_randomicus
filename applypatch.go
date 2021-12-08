@@ -111,6 +111,13 @@ func main() {
 		fmt.Printf("Error reading in lvl 2 randomizer patch: %s", err)
 		return
 	}
+	
+	lvl2EnemyTables, err := ioutil.ReadFile("w2EnemyTables.bin")
+	if err != nil {
+		fmt.Printf("Error reading in world 2 enemey tables: %s", err)
+		return
+	}
+	
 	if _, err := copyFile(*inputFile, *outputFile); err != nil {
 		fmt.Printf("Error copying inpute file to output file: %s", err)
 		return
@@ -179,6 +186,7 @@ func main() {
 	patchFile(*outputFile, 0xAE37, lvl2JumpBytes)
 	patchFile(*outputFile, 0x1F910, lvl2Data)
 	patchFile(*outputFile, 0x1F710, lvl2Randomizer)
+	patchFile(*outputFile, 0x1FD10, lvl2EnemyTables)
 	
 	patchFile(*outputFile, 0x1F190, doorPatchBytes)
 	// patchFile(*outputFile, 0x1EFD9, doorPatchBytes)
@@ -205,14 +213,18 @@ func main() {
 	patchFile(*outputFile, 0x1AE3B, createDuplicateValueSlice(0xFF, 0x80))
 	patchFile(*outputFile, 0xBDC3, createDuplicateValueSlice(0xFF, 0x80))
 	
+	// change where we load enemies from in W2
+	patchFile(*outputFile, 0xBC4F, []byte{0x80, 0x71, 0x80, 0x71, 0x80, 0x71})
+	patchFile(*outputFile, 0xBD09, []byte{0xA0, 0x71, 0xA0, 0x71, 0xA0, 0x71})
+	
 	// change how we load doors to read from a space that we can write to
 	patchFile(*outputFile, 0x8066, []byte{0x00, 0x61})
 	patchFile(*outputFile, 0xC066, []byte{0x00, 0x61})
 	// for level 2 we don't randomize doors because reasons
 	patchFile(*outputFile, 0x1F00F, []byte{
 		0x00, 27, 0xAA, 0x24,
-		0x01, 27, 0xAA, 0x23,
-		0x02, 27, 0xAA, 0x26,
+		0x01, 30, 0xAA, 0x23,
+		0x02, 30, 0xAA, 0x26,
 		0xFF, 0xFF,
 	})
 	

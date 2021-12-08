@@ -40,6 +40,7 @@ echo "Dungeon Offset: $offsetDStr"
  ./asm6f_64.exe fortress_gen.asm
  ./asm6f_64.exe lvl2-data.asm
  ./asm6f_64.exe lvl2gen.asm
+ ./asm6f_64.exe w2enemyTables.asm
  
 # call the applypatch.go with the start location
 dungJumpLoc=$(($offsetCPUD + ($dungeonRooms * 4)))

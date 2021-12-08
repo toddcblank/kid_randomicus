@@ -76,3 +76,4 @@ db $05, $B5
 db $3A, $B0
 db $70, $B0
 db $AC, $B0
+db $FF, $FF	;end of level data
