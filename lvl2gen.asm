@@ -1,13 +1,11 @@
-RULES_DATA			equ		$F900
-ROUTINE				equ		$F700
+RULES_DATA			equ		$F800
+RULES_DATA_FIRST_PAGE	equ	#$F8
+ROUTINE				equ		$F660
 CURRENT_SCREEN		equ		$04D1
 CURRENT_LEVEL		equ		$0130
-SCREEN_ADDR_DB		equ		RULES_DATA + 35 + 35 + 35 + 35
-STAGE_LENGTH		equ		#$1B
 
 ; generation variables
 LVL_GEN_PARAM_SIZE			equ	$00C0 ; size of the level.  how many rooms to build
-
 
 ; our variables
 POTENTIAL				equ		$00D0
@@ -19,6 +17,7 @@ SCREEN_RULE				equ		$00D5
 SCREEN_ADDR				equ		$00D6
 PREVIOUS_ROOM_IDX		equ		$00D7
 TEMP_JUNK				equ		$00D8
+ROOM_RULES_ADDRESS_PTR	equ		$00DA
 
 INITIAL_SEED_LB		equ		$00EF
 INITIAL_SEED_RB		equ		$00F0
@@ -34,7 +33,6 @@ LVL_ENEMIES_T2	equ		$71A0
 
 ENEMY_TABLE1	equ		$FD00
 ENEMY_TABLE2	equ		$FD10
-
 
 LVL_2_1_SIZE		equ		#$36 ; 0x1B * 2 bytes
 LVL_2_2_SIZE		equ		#$3C ; 0x1B * 2 bytes
@@ -61,7 +59,6 @@ writeRoomToLoadAddr:
 	INY
 	LDA LVL_START, Y
 	STA $4A
-	INY
 	RTS					; we only re-generate on the first screen
 	
 seedRNG:
@@ -85,13 +82,13 @@ seedRNG:
 generateLevel2:
 	LDA LVL_2_1_SIZE
 	STA LVL_GEN_PARAM_SIZE
-	LDY #$00
-	LDX CURRENT_LEVEL
+	LDX #$00
+	LDY CURRENT_LEVEL
 	BEQ writeFirstRoom
 	; assume 2-2
 	LDA LVL_2_2_SIZE
 	STA LVL_GEN_PARAM_SIZE
-	DEX
+	DEY
 	BEQ writeFirstRoom
 	;2-3
 	LDA LVL_2_3_SIZE
@@ -99,7 +96,7 @@ generateLevel2:
 
 	writeFirstRoom:
 	; write the first room
-	LDA #$20
+	LDA #$29
 	CLC
 	ADC CURRENT_LEVEL ; 20 for 2-1, 21 for 2-2, 22 for 2-3
 	STA POTENTIAL
@@ -112,7 +109,7 @@ generateLevel2:
 	BEQ moreRooms			;try again, didn't work
 	JSR storeRoom
 	JSR placeDoor
-	CPY LVL_GEN_PARAM_SIZE
+	CPX LVL_GEN_PARAM_SIZE
 	BNE moreRooms
 	JSR writeExit
 	RTS
@@ -147,20 +144,29 @@ placeDoor:
 
 pickNextRoom:
 	; pick a random new screen
-	STY Y_STORAGE
 	JSR prng
-	LDY Y_STORAGE
 	AND #$1F
 	STA POTENTIAL
 	INC POTENTIAL
 
 ; checkRoom - compares rules of PREVIOUS_ROOM_IDX with POTENTIAL.  A > 0 means it works
 checkRoom:
+	LDA #$00
+	STA ROOM_RULES_ADDRESS_PTR
+	LDA RULES_DATA_FIRST_PAGE
+	STA ROOM_RULES_ADDRESS_PTR + 1
 	LDA PREVIOUS_ROOM_IDX
-	STA SRL_WORK
-	DEC SRL_WORK
-	ASL SRL_WORK
-	ASL SRL_WORK
+	SEC
+	SBC #$01
+	ASL A
+	ASL A
+	ASL A
+	
+	BCC storeSrlwork
+	INC ROOM_RULES_ADDRESS_PTR + 1
+	CLC
+	
+	storeSrlwork:
 	; SRL_WORK now contains the index of the first byte of rules for our current room
 	STA SRL_WORK
 	
@@ -170,6 +176,7 @@ checkRoom:
 		CMP #$08
 		BMI setindex
 		INC SRL_WORK
+		SEC
 		SBC #$08
 		JMP getroomrulebitindex
 
@@ -177,8 +184,8 @@ checkRoom:
 		; now that we have the offset stored in SRL_WORK
 		; get the right rule byte and store it
 		STA ROOM_BIT 
-		LDX SRL_WORK
-		LDA RULES_DATA,X
+		LDY SRL_WORK
+		LDA (ROOM_RULES_ADDRESS_PTR), Y
 		STA SCREEN_RULE
 
 		LDA #$80
@@ -194,15 +201,15 @@ checkRoom:
 
 	RTS
 
-; writeExit - writes our exit room for the level 0x24, 0x25, and 0x26 for 2-1, 2-2, and 2-3
+; writeExit - writes our exit room for the level 0x2C, 0x2D, and 0x2E for 2-1, 2-2, and 2-3
 writeExit:
-	LDA #$23
+	LDA #$2C
 	CLC
 	ADC CURRENT_LEVEL
 	STA POTENTIAL
 	JSR storeRoom
 	; store FF FF in the last spot (fake room 0x26
-	LDA #$26
+	LDA #$2F
 	STA POTENTIAL
 	JSR storeRoom
 	RTS
@@ -215,17 +222,34 @@ writeExit:
 ;		LVL_START contains the starting address of the level data
 ;		Updates Y to point to the next place to write
 storeRoom:
+	LDA #$00
+	STA ROOM_RULES_ADDRESS_PTR
+	LDA RULES_DATA_FIRST_PAGE
+	STA ROOM_RULES_ADDRESS_PTR + 1
+	
 	LDA POTENTIAL
 	STA PREVIOUS_ROOM_IDX
+	; we need to multiply the room index by 8, since each room takes up 8 bytes.
+	; then add 6
 	ASL A
-	TAX
-	LDA SCREEN_ADDR_DB, X
-	STA LVL_START, Y
+	ASL A
+	ASL A
+	BCC getFirstRoomAddressByte
+	INC ROOM_RULES_ADDRESS_PTR + 1
+	SEC
+	SBC #$08
+	CLC
+	
+	getFirstRoomAddressByte:
+	ADC #$06
+	TAY
+	LDA (ROOM_RULES_ADDRESS_PTR), Y
+	STA LVL_START, X
 	INX
 	INY
-	LDA SCREEN_ADDR_DB, X
-	STA LVL_START, Y
-	INY
+	LDA (ROOM_RULES_ADDRESS_PTR), Y
+	STA LVL_START, X
+	INX
 	
 	RTS
 

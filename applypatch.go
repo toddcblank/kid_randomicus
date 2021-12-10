@@ -184,8 +184,8 @@ func main() {
 	patchFile(*outputFile, 0x18ABE, removeUpgradeReqBytes)
 	patchFile(*outputFile, 0x1EFB2, adjustPricesBytes)
 	patchFile(*outputFile, 0xAE37, lvl2JumpBytes)
-	patchFile(*outputFile, 0x1F910, lvl2Data)
-	patchFile(*outputFile, 0x1F710, lvl2Randomizer)
+	patchFile(*outputFile, 0x1F670, lvl2Randomizer)
+	patchFile(*outputFile, 0x1F810, lvl2Data)
 	patchFile(*outputFile, 0x1FD10, lvl2EnemyTables)
 	
 	patchFile(*outputFile, 0x1F190, doorPatchBytes)
