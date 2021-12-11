@@ -1,5 +1,6 @@
-RULES_DATA			equ		$F800
-RULES_DATA_FIRST_PAGE	equ	#$F8
+RULES_DATA				equ		$F880
+RULES_DATA_FIRST_PAGE		equ	#$F8
+RULES_DATA_FIRST_PAGE_LB	equ	#$80
 ROUTINE				equ		$F660
 CURRENT_SCREEN		equ		$04D1
 CURRENT_LEVEL		equ		$0130
@@ -17,7 +18,11 @@ SCREEN_RULE				equ		$00D5
 SCREEN_ADDR				equ		$00D6
 PREVIOUS_ROOM_IDX		equ		$00D7
 TEMP_JUNK				equ		$00D8
-ROOM_RULES_ADDRESS_PTR	equ		$00DA
+DOOR_COUNT				equ		$00D9
+ROOM_RULES_ADDRESS_PTR	equ		$00DA ; 2 bytes
+ROOM_DOOR_LOC			equ		$00DC
+DOOR_CHOSEN				equ		$00DD
+DATA_OFFSET_CALC		equ		$00DE
 
 INITIAL_SEED_LB		equ		$00EF
 INITIAL_SEED_RB		equ		$00F0
@@ -28,6 +33,7 @@ STORE_SEED_LB		equ		$00B0
 STORE_SEED_RB		equ		$00B1
 
 LVL_START		equ		$7100
+LVL_DOORS		equ		$6100
 LVL_ENEMIES_T1	equ		$7180
 LVL_ENEMIES_T2	equ		$71A0
 
@@ -83,6 +89,7 @@ generateLevel2:
 	LDA LVL_2_1_SIZE
 	STA LVL_GEN_PARAM_SIZE
 	LDX #$00
+	STX DOOR_COUNT
 	LDY CURRENT_LEVEL
 	BEQ writeFirstRoom
 	; assume 2-2
@@ -112,6 +119,7 @@ generateLevel2:
 	CPX LVL_GEN_PARAM_SIZE
 	BNE moreRooms
 	JSR writeExit
+	JSR writeDoorClosure
 	RTS
 
 generateEnemies:
@@ -133,13 +141,116 @@ generateEnemies:
 	LDA ENEMY_TABLE2, Y
 	STA LVL_ENEMIES_T2, X
 	
-	; decrement twice because Size is 2 times number of screens
 	DEX
 	BPL genEnemyLoop
 	RTS
 
+; Pre-reqs:
+;
+;		POTENTIAL contains the index of the room to place a door
+;		Y contains the memory offset (2 bytes per room)
+;		LVL_START contains the starting address of the level data
+;		Updates Y to point to the next place to write
 placeDoor:
-	;NYI
+	
+	JSR prng
+	AND #$07
+	CMP #$01
+	BEQ checkNumDoors
+	RTS
+	
+	checkNumDoors:
+	LDA DOOR_COUNT
+	CMP #$06
+	BMI pickDoorToPlace
+	RTS
+	
+	pickDoorToPlace:
+	JSR pickADoor
+	STA DOOR_CHOSEN
+	
+	LDA POTENTIAL
+	STA DATA_OFFSET_CALC
+	JSR convertDataOffsetCalcToDataOffset
+	ADC #$05
+	TAY
+	LDA (ROOM_RULES_ADDRESS_PTR), Y	
+	BNE putADoorHere
+	RTS
+	
+	putADoorHere:
+	STA ROOM_DOOR_LOC
+	;door data is 4 bytes each, stage, screen, coords, room type
+	LDA DOOR_COUNT
+	ASL A
+	ASL A
+	TAY
+	
+	LDA CURRENT_LEVEL
+	STA LVL_DOORS, Y
+	INY
+	
+	TXA
+	ROR A
+	SEC
+	SBC #$01
+	STA LVL_DOORS, Y
+	INY
+	
+	LDA ROOM_DOOR_LOC
+	STA LVL_DOORS, Y
+	INY
+	
+	LDA DOOR_CHOSEN
+	STA LVL_DOORS, Y
+	INY
+	
+	INC DOOR_COUNT
+	
+	RTS
+	
+pickADoor:
+	JSR prng
+	AND #$07
+	CLC
+	ADC #$20
+	CMP #$21
+	BNE returnFromPickADoor
+	ADC #$04	;make 0x21 a shop
+	
+	returnFromPickADoor
+	RTS
+	
+writeDoorClosure:
+	LDA DOOR_COUNT
+	ASL A
+	ASL A
+	TAY
+	LDA #$FF
+	STA LVL_DOORS, Y
+	STA LVL_DOORS + 1, Y
+	STA LVL_DOORS + 2, Y
+	STA LVL_DOORS + 3, Y
+	RTS
+
+convertDataOffsetCalcToDataOffset:
+	LDA RULES_DATA_FIRST_PAGE_LB
+	STA ROOM_RULES_ADDRESS_PTR
+	LDA RULES_DATA_FIRST_PAGE
+	STA ROOM_RULES_ADDRESS_PTR + 1
+	LDA DATA_OFFSET_CALC
+	SEC
+	SBC #$01
+	ASL A
+	ASL A
+	ASL A
+	
+	BCC exitConvert
+	INC ROOM_RULES_ADDRESS_PTR + 1
+	CLC
+	
+	exitConvert:
+	; SRL_WORK now contains the index of the first byte of rules for our current room
 	RTS
 
 pickNextRoom:
@@ -151,22 +262,10 @@ pickNextRoom:
 
 ; checkRoom - compares rules of PREVIOUS_ROOM_IDX with POTENTIAL.  A > 0 means it works
 checkRoom:
-	LDA #$00
-	STA ROOM_RULES_ADDRESS_PTR
-	LDA RULES_DATA_FIRST_PAGE
-	STA ROOM_RULES_ADDRESS_PTR + 1
 	LDA PREVIOUS_ROOM_IDX
-	SEC
-	SBC #$01
-	ASL A
-	ASL A
-	ASL A
+	STA DATA_OFFSET_CALC
+	JSR convertDataOffsetCalcToDataOffset
 	
-	BCC storeSrlwork
-	INC ROOM_RULES_ADDRESS_PTR + 1
-	CLC
-	
-	storeSrlwork:
 	; SRL_WORK now contains the index of the first byte of rules for our current room
 	STA SRL_WORK
 	
@@ -222,24 +321,9 @@ writeExit:
 ;		LVL_START contains the starting address of the level data
 ;		Updates Y to point to the next place to write
 storeRoom:
-	LDA #$00
-	STA ROOM_RULES_ADDRESS_PTR
-	LDA RULES_DATA_FIRST_PAGE
-	STA ROOM_RULES_ADDRESS_PTR + 1
-	
 	LDA POTENTIAL
-	STA PREVIOUS_ROOM_IDX
-	; we need to multiply the room index by 8, since each room takes up 8 bytes.
-	; then add 6
-	ASL A
-	ASL A
-	ASL A
-	BCC getFirstRoomAddressByte
-	INC ROOM_RULES_ADDRESS_PTR + 1
-	SEC
-	SBC #$08
-	CLC
-	
+	STA DATA_OFFSET_CALC
+	JSR convertDataOffsetCalcToDataOffset
 	getFirstRoomAddressByte:
 	ADC #$06
 	TAY

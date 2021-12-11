@@ -185,7 +185,7 @@ func main() {
 	patchFile(*outputFile, 0x1EFB2, adjustPricesBytes)
 	patchFile(*outputFile, 0xAE37, lvl2JumpBytes)
 	patchFile(*outputFile, 0x1F670, lvl2Randomizer)
-	patchFile(*outputFile, 0x1F810, lvl2Data)
+	patchFile(*outputFile, 0x1F890, lvl2Data)
 	patchFile(*outputFile, 0x1FD10, lvl2EnemyTables)
 	
 	patchFile(*outputFile, 0x1F190, doorPatchBytes)
@@ -220,14 +220,8 @@ func main() {
 	// change how we load doors to read from a space that we can write to
 	patchFile(*outputFile, 0x8066, []byte{0x00, 0x61})
 	patchFile(*outputFile, 0xC066, []byte{0x00, 0x61})
-	// for level 2 we don't randomize doors because reasons
-	patchFile(*outputFile, 0x1F00F, []byte{
-		0x00, 27, 0xAA, 0x24,
-		0x01, 30, 0xAA, 0x23,
-		0x02, 30, 0xAA, 0x26,
-		0xFF, 0xFF,
-	})
-	
+	patchFile(*outputFile, 0x9A06, []byte{0x00, 0x61})
+		
 	// text patches
 	// Add alphabet to title screen
 	patchFile(*outputFile, 0x3d30, titleTextAlphabet)
