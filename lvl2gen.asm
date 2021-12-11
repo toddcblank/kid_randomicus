@@ -4,6 +4,7 @@ RULES_DATA_FIRST_PAGE_LB	equ	#$80
 ROUTINE				equ		$F660
 CURRENT_SCREEN		equ		$04D1
 CURRENT_LEVEL		equ		$0130
+LVL_2_ITEM_DATA		equ		$FE00
 
 ; generation variables
 LVL_GEN_PARAM_SIZE			equ	$00C0 ; size of the level.  how many rooms to build
@@ -20,7 +21,7 @@ PREVIOUS_ROOM_IDX		equ		$00D7
 TEMP_JUNK				equ		$00D8
 DOOR_COUNT				equ		$00D9
 ROOM_RULES_ADDRESS_PTR	equ		$00DA ; 2 bytes
-ROOM_DOOR_LOC			equ		$00DC
+ROOM_LOCATION			equ		$00DC
 DOOR_CHOSEN				equ		$00DD
 DATA_OFFSET_CALC		equ		$00DE
 
@@ -34,6 +35,8 @@ STORE_SEED_RB		equ		$00B1
 
 LVL_START		equ		$7100
 LVL_DOORS		equ		$6100
+LVL_ITEM_COUNT	equ		$6140
+LVL_ITEMS		equ		$6141
 LVL_ENEMIES_T1	equ		$7180
 LVL_ENEMIES_T2	equ		$71A0
 
@@ -43,6 +46,7 @@ ENEMY_TABLE2	equ		$FD10
 LVL_2_1_SIZE		equ		#$36 ; 0x1B * 2 bytes
 LVL_2_2_SIZE		equ		#$3C ; 0x1B * 2 bytes
 LVL_2_3_SIZE		equ		#$3C ; 0x1B * 2 bytes
+LVL_MAX_ITEMS		equ		#$05
 
 org ROUTINE
 LDA CURRENT_SCREEN
@@ -90,6 +94,7 @@ generateLevel2:
 	STA LVL_GEN_PARAM_SIZE
 	LDX #$00
 	STX DOOR_COUNT
+	STX LVL_ITEM_COUNT
 	LDY CURRENT_LEVEL
 	BEQ writeFirstRoom
 	; assume 2-2
@@ -116,6 +121,7 @@ generateLevel2:
 	BEQ moreRooms			;try again, didn't work
 	JSR storeRoom
 	JSR placeDoor
+	JSR addItem
 	CPX LVL_GEN_PARAM_SIZE
 	BNE moreRooms
 	JSR writeExit
@@ -179,7 +185,7 @@ placeDoor:
 	RTS
 	
 	putADoorHere:
-	STA ROOM_DOOR_LOC
+	STA ROOM_LOCATION
 	;door data is 4 bytes each, stage, screen, coords, room type
 	LDA DOOR_COUNT
 	ASL A
@@ -188,22 +194,18 @@ placeDoor:
 	
 	LDA CURRENT_LEVEL
 	STA LVL_DOORS, Y
-	INY
 	
 	TXA
 	ROR A
 	SEC
 	SBC #$01
-	STA LVL_DOORS, Y
-	INY
+	STA LVL_DOORS+1, Y
 	
-	LDA ROOM_DOOR_LOC
-	STA LVL_DOORS, Y
-	INY
+	LDA ROOM_LOCATION
+	STA LVL_DOORS+2, Y
 	
 	LDA DOOR_CHOSEN
-	STA LVL_DOORS, Y
-	INY
+	STA LVL_DOORS+3, Y
 	
 	INC DOOR_COUNT
 	
@@ -220,7 +222,56 @@ pickADoor:
 	
 	returnFromPickADoor
 	RTS
+
+addItem:
+
+	LDA LVL_ITEM_COUNT
+	CMP LVL_MAX_ITEMS
+	BCC notatmaxitems
+	RTS
 	
+	notatmaxitems:
+	JSR prng
+	AND #$07
+	CMP #$01
+	BEQ pickItem
+	RTS
+	
+	pickItem:
+	JSR prng
+	AND #$01
+	STA DOOR_CHOSEN	;yeah this is for doors, but we'll use it here
+	
+	LDA POTENTIAL
+	SEC
+	SBC #$01
+	TAY
+	LDA LVL_2_ITEM_DATA, Y
+	STA ROOM_LOCATION
+	
+	LDA LVL_ITEM_COUNT
+	ASL A
+	ASL A
+	TAY
+	
+	LDA CURRENT_LEVEL
+	STA LVL_ITEMS, Y
+	
+	TXA
+	ROR A
+	SEC
+	SBC #$01
+	STA LVL_ITEMS+1, Y
+	
+	LDA ROOM_LOCATION
+	STA LVL_ITEMS+2, Y
+	
+	LDA DOOR_CHOSEN
+	STA LVL_ITEMS+3, Y
+	
+	INC LVL_ITEM_COUNT
+	RTS
+
 writeDoorClosure:
 	LDA DOOR_COUNT
 	ASL A

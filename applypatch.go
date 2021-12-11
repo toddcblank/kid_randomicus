@@ -118,6 +118,12 @@ func main() {
 		return
 	}
 	
+	lvl2ItemData, err := ioutil.ReadFile("lvl2ItemData.bin")
+	if err != nil {
+		fmt.Printf("Error reading in world 2 item data: %s", err)
+		return
+	}
+	
 	if _, err := copyFile(*inputFile, *outputFile); err != nil {
 		fmt.Printf("Error copying inpute file to output file: %s", err)
 		return
@@ -187,6 +193,7 @@ func main() {
 	patchFile(*outputFile, 0x1F670, lvl2Randomizer)
 	patchFile(*outputFile, 0x1F890, lvl2Data)
 	patchFile(*outputFile, 0x1FD10, lvl2EnemyTables)
+	patchFile(*outputFile, 0x1FE10, lvl2ItemData)
 	
 	patchFile(*outputFile, 0x1F190, doorPatchBytes)
 	// patchFile(*outputFile, 0x1EFD9, doorPatchBytes)
@@ -199,6 +206,9 @@ func main() {
 	patchFile(*outputFile, 0x1E27B, []byte{0xD0})
 	patchFile(*outputFile, 0x1524C, []byte{0xD0})
 	patchFile(*outputFile, 0x1E21B, []byte{0xD0})
+	
+	// fun hammer damage =D
+	patchFile(*outputFile, 0x16B4E, []byte{0x19})
 	
 	// Change where we read the boss music index so that it's in RAM that we can write to
 	patchFile(*outputFile, 0x1CB8E, []byte{0xD0, 0x00})
@@ -221,7 +231,16 @@ func main() {
 	patchFile(*outputFile, 0x8066, []byte{0x00, 0x61})
 	patchFile(*outputFile, 0xC066, []byte{0x00, 0x61})
 	patchFile(*outputFile, 0x9A06, []byte{0x00, 0x61})
-		
+	
+	// change where we load item info during levels, this is lvl 2, there's 5 reads we need
+	// to adjust
+	patchFile(*outputFile, 0xAA2B, []byte{0x40, 0x61})
+	patchFile(*outputFile, 0xAA3B, []byte{0x41, 0x61})
+	patchFile(*outputFile, 0xAA45, []byte{0x42, 0x61})
+	patchFile(*outputFile, 0xAA4F, []byte{0x43, 0x61})
+	patchFile(*outputFile, 0xAA67, []byte{0x43, 0x61})
+	patchFile(*outputFile, 0xAA74, []byte{0x44, 0x61})
+	
 	// text patches
 	// Add alphabet to title screen
 	patchFile(*outputFile, 0x3d30, titleTextAlphabet)
