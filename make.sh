@@ -16,13 +16,24 @@ offsetDStr=$(printf '%X\n' $offsetCPUD)
 echo "Dungeon Offset: $offsetDStr"
 
 # build the asm
- ./asm6f_64.exe autogenlvl1.asm
- ./asm6f_64.exe horizontalScreenData.asm
+ #./asm6f_64.exe autogenlvl1.asm
+ #./asm6f_64.exe horizontalScreenData.asm
  ./asm6f_64.exe fortress_gen.asm
- ./asm6f_64.exe lvl2-data.asm
- ./asm6f_64.exe lvl2gen.asm
- ./asm6f_64.exe w2enemyTables.asm
- ./asm6f_64.exe lvl2ItemData.asm
+
+ ./asm6f_64.exe w1hijack.asm
+ ./asm6f_64.exe w2hijack.asm
+ ./asm6f_64.exe w3hijack.asm
+
+ ./asm6f_64.exe enemyFrequencyTable.asm
+ ./asm6f_64.exe lvlRandomizer.asm
+
+ ./asm6f_64.exe w1screendata.asm
+ ./asm6f_64.exe w2screendata.asm
+ ./asm6f_64.exe w3screendata.asm
+
+ ./asm6f_64.exe w1itemLocations.asm
+ ./asm6f_64.exe w2itemLocations.asm
+ ./asm6f_64.exe w3itemLocations.asm
  
 # call the applypatch.go with the start location
 dungJumpLoc=$(($offsetCPUD + ($dungeonRooms * 4)))

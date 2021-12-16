@@ -1,0 +1,56 @@
+ENEMY_TABLE	equ	$FA00
+
+NONE	equ	$00;	empty
+SNAKES	equ	$02;	SHEMUN
+GROUND	equ	$03;	Ground enemy
+ROKMAN	equ	$04;	Rocks
+FROGS	equ	$05;	Frogs
+THIEVES	equ	$07;	Pluton (thief), flying thieves in w3
+FLYERS	equ	$08;	Flying mouths, monoeyes, and metroids
+SNOWMAN	equ	$09;	Snowman
+RISERS	equ	$0A;	Rising faces, commyloose, and octos
+COLLIN	equ	$0B;	Guards w/3 flys
+KEEPAH	equ $0C;	Ridley (this messes up some stuff, and shouldn't be used =/)
+REAPER	equ $0D;	reaper
+
+; 32 bytes per world
+
+; World 1 Table 1
+db NONE, NONE
+db FROGS, FROGS, FROGS, FROGS, FROGS
+db FLYERS, FLYERS, FLYERS, FLYERS, FLYERS, FLYERS
+db RISERS, RISERS, RISERS, RISERS, RISERS
+
+; World 1 Table 2
+db REAPER, REAPER, REAPER, REAPER
+db SNAKES, SNAKES, SNAKES, SNAKES
+db GROUND, GROUND, GROUND, GROUND
+db NONE, NONE, NONE, NONE
+
+; World 2 Table 1
+db NONE, NONE
+db ROKMAN, ROKMAN, ROKMAN, ROKMAN
+db FROGS, FROGS
+db THIEVES
+db FLYERS, FLYERS, FLYERS, FLYERS
+db RISERS, RISERS, RISERS
+
+; World 2 Table 2
+db NONE, NONE, NONE, NONE
+db SNAKES, SNAKES, SNAKES, SNAKES
+db GROUND, GROUND, GROUND, GROUND
+db SNOWMAN, SNOWMAN, SNOWMAN, SNOWMAN
+
+; World 3 Table 1
+db COLLIN, COLLIN, COLLIN, COLLIN
+db NONE, NONE
+db THIEVES
+db THIEVES
+db FLYERS, FLYERS, FLYERS, FLYERS
+db RISERS, RISERS, RISERS, RISERS
+
+; 16 spots for table 2, can be NONE, SHEMUN, GIRIN, REAPER, or SNOWMAN
+db REAPER, REAPER, REAPER, REAPER
+db SNAKES, SNAKES, SNAKES, SNAKES
+db GROUND, GROUND, GROUND, GROUND
+db NONE, NONE, NONE, NONE

@@ -126,7 +126,14 @@ db $AA, $0A, $0B, $28; room 28 - 1010 1010 0000 1010 (hot springs)
 db $FF, $FF, $0F, $29; room 29 - 1111 1111 1111 1111 (1-4 and 3-4 boss room)
 
 
-originaldungeon:
+originaldungeon:           
+  ASL A                    
+  TAX                      
+  LDA $991C,X              
+  STA $00                  
+  LDA $991D,X              
+  STA $01                  
+
 ; original code that we swiped
   LDA #$00                 
   STA $02                  
