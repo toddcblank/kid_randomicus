@@ -16,16 +16,16 @@ offsetDStr=$(printf '%X\n' $offsetCPUD)
 echo "Dungeon Offset: $offsetDStr"
 
 # build the asm
- #./asm6f_64.exe autogenlvl1.asm
- #./asm6f_64.exe horizontalScreenData.asm
  ./asm6f_64.exe fortress_gen.asm
 
  ./asm6f_64.exe w1hijack.asm
  ./asm6f_64.exe w2hijack.asm
  ./asm6f_64.exe w3hijack.asm
+ ./asm6f_64.exe w4hijack.asm
 
  ./asm6f_64.exe enemyFrequencyTable.asm
  ./asm6f_64.exe lvlRandomizer.asm
+ ./asm6f_64.exe w4Randomizer.asm
 
  ./asm6f_64.exe w1screendata.asm
  ./asm6f_64.exe w2screendata.asm

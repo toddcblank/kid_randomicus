@@ -96,6 +96,17 @@ func main() {
 		return
 	}
 
+	w4Randomizer, err := ioutil.ReadFile("w4randomizer.bin")
+	if err != nil {
+		fmt.Printf("Errof reading in lvl 4 randomizer: %s", err)
+		return
+	}
+	w4HijackBytes, err := ioutil.ReadFile("w4hijack.bin")
+	if err != nil {
+		fmt.Printf("Error reading in lvl 4 hijack patch: %s", err)
+		return
+	}
+
 	dungeonGenBytes, err := ioutil.ReadFile("fortress_gen.bin")
 	if err != nil {
 		fmt.Printf("Error reading in dungeon generation patch: %s", err)
@@ -218,6 +229,9 @@ func main() {
 	patchFile(*outputFile, 0x1FB80, w3ScreenData)
 	patchFile(*outputFile, 0x1FE70, w3ItemData)
 
+	patchFile(*outputFile, 0xF87E, w4HijackBytes)
+	patchFile(*outputFile, 0x1FE90, w4Randomizer)
+
 	// Fortresses
 	patchFile(*outputFile, 0x1991F, fortressHijackBytes)
 	patchFile(*outputFile, *autoGenDungeonOffset, dungeonGenBytes)
@@ -268,6 +282,10 @@ func main() {
 	// change where we load enemies for W3
 	patchFile(*outputFile, 0x1AF81, []byte{0x80, 0x61, 0x80, 0x61, 0x80, 0x61})
 	patchFile(*outputFile, 0x1AFF5, []byte{0xA0, 0x61, 0xA0, 0x61, 0xA0, 0x61})
+
+	// change where we load enemies for W4
+	patchFile(*outputFile, 0xFF07, []byte{0x80, 0x61, 0x80, 0x61, 0x80, 0x61})
+	patchFile(*outputFile, 0xFF1C, []byte{0xA0, 0x61, 0xA0, 0x61, 0xA0, 0x61})
 
 	// change how we load doors to read from a space that we can write to
 	patchFile(*outputFile, 0x8066, []byte{0x00, 0x61})
