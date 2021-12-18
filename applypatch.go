@@ -96,6 +96,12 @@ func main() {
 		return
 	}
 
+	doorDistributionBytes, err := ioutil.ReadFile("doorDistribution.bin")
+	if err != nil {
+		fmt.Printf("Errof reading in lvl 3 item locations: %s", err)
+		return
+	}
+
 	w4Randomizer, err := ioutil.ReadFile("w4randomizer.bin")
 	if err != nil {
 		fmt.Printf("Errof reading in lvl 4 randomizer: %s", err)
@@ -228,6 +234,8 @@ func main() {
 	patchFile(*outputFile, 0xD9E9, w3HijackBytes)
 	patchFile(*outputFile, 0x1FB80, w3ScreenData)
 	patchFile(*outputFile, 0x1FE70, w3ItemData)
+
+	patchFile(*outputFile, 0x1FDE0, doorDistributionBytes)
 
 	patchFile(*outputFile, 0xF87E, w4HijackBytes)
 	patchFile(*outputFile, 0x1FE90, w4Randomizer)

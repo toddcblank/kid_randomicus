@@ -14,6 +14,7 @@ ROUTINE						equ	$F660
 ; these variables don't change per level
 CURRENT_SCREEN		equ		$04D1
 CURRENT_LEVEL		equ		$0130
+CURRENT_WORLD		equ		$00A0
 LVL_ITEM_DATA		equ		$FE00
 LVL_START			equ		$6200
 LVL_DOORS			equ		$6100
@@ -24,6 +25,8 @@ LVL_ENEMIES_T2		equ		$61A0
 LVL_MAX_ITEMS		equ		#$05
 FIRST_ROOM			equ		#$29
 FIRST_EXIT_OPTION	equ		#$26
+
+DOOR_DISTRIBUTION equ   $FDD0
 
 LVL_2_1_SIZE		equ		#$36
 LVL_2_2_SIZE		equ		#$3C
@@ -170,8 +173,15 @@ generateEnemies:
 ;		Updates Y to point to the next place to write
 placeDoor:
 	
+	; prevent doors on screen 2 for various reasons
+	; it results in the level being regenerated when you exit the room
+	CPX #$04
+	BNE maybeDoor
+	RTS
+	
+	maybeDoor:
 	JSR prng
-	AND #$07
+	AND #$03
 	CMP #$01
 	BEQ checkNumDoors
 	RTS
@@ -222,16 +232,27 @@ placeDoor:
 	
 	RTS
 	
+; todo: this needs different logic per world
 pickADoor:
 	JSR prng
-	AND #$07
-	CLC
-	ADC #$20
-	CMP #$21
-	BNE returnFromPickADoor
-	ADC #$04	;make 0x21 a shop
+	AND #$0F
+
+	LDY CURRENT_WORLD
+	CPY #$02	
+	BEQ loadDoorFromDistribution
 	
-	returnFromPickADoor
+	CLC
+	ADC #$10
+	CPY #$04	
+	BEQ loadDoorFromDistribution
+	
+	CLC
+	ADC #$10
+
+	loadDoorFromDistribution:
+	TAY
+	LDA DOOR_DISTRIBUTION, Y
+	
 	RTS
 
 addItem:

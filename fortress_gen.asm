@@ -534,7 +534,7 @@ populateenemies:
 	
 	nextroom:
 	DEC ENEMY_PLACEMENT_IDX
-	BEQ done
+	BMI done
 	JMP iterate_rooms
 	
 	done:

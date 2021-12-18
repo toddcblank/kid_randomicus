@@ -34,6 +34,8 @@ echo "Dungeon Offset: $offsetDStr"
  ./asm6f_64.exe w1itemLocations.asm
  ./asm6f_64.exe w2itemLocations.asm
  ./asm6f_64.exe w3itemLocations.asm
+
+ ./asm6f_64.exe doorDistribution.asm
  
 # call the applypatch.go with the start location
 dungJumpLoc=$(($offsetCPUD + ($dungeonRooms * 4)))
