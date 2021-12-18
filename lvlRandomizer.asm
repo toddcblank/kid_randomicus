@@ -156,6 +156,7 @@ generateEnemies:
 	; select T2 Enemy, it's always 0x10 more than table 1
 	JSR prng
 	AND #$0F
+	CLC
 	ADC #$10
 	TAY
 	LDA (PARAM_ENEMY_TABLE1_LB), Y
