@@ -48,8 +48,6 @@ NEED_EXIT					equ $0073	; which exit will need to be available in a room
 NEXT_ROOM_OFFSET			equ $0074	; the next room we're going to
 INITIAL_SEED_LB				equ	$00EF
 INITIAL_SEED_RB				equ	$00F0
-;INITIAL_SEED_LB				equ	$0080
-;INITIAL_SEED_RB				equ	$0081
 RNG_SEED 					equ	$0197
 RNG_SEED_RB 				equ	$0198
 PATH_COMPARISON				equ	$0075
