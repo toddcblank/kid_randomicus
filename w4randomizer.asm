@@ -121,7 +121,7 @@ generateEnemies:
 	JSR prng
     AND #$01
     CMP #$00
-    BNE storeErinus
+    BEQ storeErinus
     LDA ENEMY_ERINUS
 
     storeErinus:

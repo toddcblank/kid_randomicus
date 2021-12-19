@@ -35,8 +35,9 @@ echo "Dungeon Offset: $offsetDStr"
  ./asm6f_64.exe w2itemLocations.asm
  ./asm6f_64.exe w3itemLocations.asm
 
- ./asm6f_64.exe doorDistribution.asm
- 
+ ./asm6f_64.exe doorDistribution.asm 
+ ./asm6f_64.exe platformData.asm
+
 # call the applypatch.go with the start location
 dungJumpLoc=$(($offsetCPUD + ($dungeonRooms * 4)))
 go run applypatch.go --autoGenOffset=$offsetROM --jumpLoc=$offsetCPU --autoGenDungeonOffset=$offsetROM_DUNG --dungeonJumpLoc=$dungJumpLoc

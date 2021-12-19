@@ -10,6 +10,7 @@ PARAM_ENEMY_TABLE1_HB		EQU $85
 ENEMY_TABLE_HB				equ #$FD
 
 ROUTINE						equ	$F660
+PLATFORM_DATA				equ $F9A0
 
 ; these variables don't change per level
 CURRENT_SCREEN		equ		$04D1
@@ -22,6 +23,8 @@ LVL_ITEM_COUNT		equ		$6140
 LVL_ITEMS			equ		$6141
 LVL_ENEMIES_T1		equ		$6180
 LVL_ENEMIES_T2		equ		$61A0
+LVL_PLATFORMS 		equ		$6300
+MAX_PLATFORM_SCRNS	equ		#$08
 LVL_MAX_ITEMS		equ		#$05
 FIRST_ROOM			equ		#$29
 FIRST_EXIT_OPTION	equ		#$26
@@ -55,6 +58,16 @@ ROOM_RULES_ADDRESS_PTR	equ		$00DA	; 2 bytes, word address of the rules we care a
 ROOM_LOCATION			equ		$00DC	; location in a room that we're placing something (door or item)
 DOOR_CHOSEN				equ		$00DD	; which door (or item) we've chosen
 DATA_OFFSET_CALC		equ		$00DE	; used when calculating the data offset for a room index
+LAST_DOOR_ROOM_IDX		equ		$0086
+PLATFORM_SCRNS_COUNT	equ		$0087
+PLATFORM_SCRNS_PTR		equ		$0088	; 2 bytes, points to the next place to write platform
+
+PLATFORM_BANK_COUNTS	equ		$0098 ; 38, 39, 3A, and 3B hold counts for each platform bank
+PLATFORM_BANK_IDX		equ		$009C
+PLATFORM_BANK_CURR_COUNT	equ 	$009D
+PLATFORM_BANK_OFFSET	equ		$009E
+
+PLATFORM_DATA_IDX		equ		$008A
 
 ; RNG variables
 INITIAL_SEED_LB		equ		$00EF
@@ -70,12 +83,23 @@ org ROUTINE
 	LDA CURRENT_SCREEN
 	CMP #$00
 	BNE loadNextScreen		;if we're not on the 0th screen, we've already generated it.
-	JSR seedRNG
+	JSR seedRNG	
 	JSR generateLevel
 	JSR generateEnemies
 	loadNextScreen:
 	JSR writeRoomToLoadAddr	;writes the next room to the place that the game loads it
 RTS
+
+clearPlatformData:
+	LDA #$FF
+	LDY #$7F
+
+	loopClear:
+	STA LVL_PLATFORMS, Y
+	DEY
+	BPL loopClear
+
+	RTS
 
 writeRoomToLoadAddr:
 	LDA CURRENT_SCREEN
@@ -107,9 +131,18 @@ seedRNG:
 	RTS
 
 generateLevel:
+	; reset our variables
+	LDX #$63
+	STX PLATFORM_SCRNS_PTR + 1
 	LDX #$00
+	STX PLATFORM_SCRNS_PTR	
 	STX DOOR_COUNT
 	STX LVL_ITEM_COUNT
+	STX LAST_DOOR_ROOM_IDX
+	STX PLATFORM_BANK_OFFSET
+	STX PLATFORM_SCRNS_COUNT
+
+	JSR clearPlatformData
 	
 	; write the first room
 	LDA FIRST_ROOM
@@ -230,7 +263,10 @@ placeDoor:
 	STA LVL_DOORS+3, Y
 	
 	INC DOOR_COUNT
-	
+	STX LAST_DOOR_ROOM_IDX
+	INC LAST_DOOR_ROOM_IDX
+	INC LAST_DOOR_ROOM_IDX
+
 	RTS
 	
 ; todo: this needs different logic per world
@@ -340,13 +376,36 @@ convertDataOffsetCalcToDataOffset:
 pickNextRoom:
 	; pick a random new screen
 	JSR prng
-	AND #$1F
+	AND #$3F
+	CMP #$25	; valid rooms are 0 -> 36
+	BPL pickNextRoom
 	STA POTENTIAL
 	INC POTENTIAL
 	RTS
 
 ; checkRoom - compares rules of PREVIOUS_ROOM_IDX with POTENTIAL.  A > 0 means it works
 checkRoom:
+
+	; check if the room has platforms, if it does we might need to exit early
+	JSR getPlatformDataForRoom
+	CMP #$FF
+	BEQ platformsWork
+
+	LDA MAX_PLATFORM_SCRNS
+	CMP PLATFORM_SCRNS_COUNT
+	BPL checkForPlatformDoor
+	; not good, we have enough platforms
+	LDA #$00
+	RTS
+
+	checkForPlatformDoor
+	; we've got platforms, make sure the previous screen didn't have a door
+	CPX LAST_DOOR_ROOM_IDX
+	BNE platformsWork
+	LDA #$00
+	RTS
+
+	platformsWork:
 	LDA PREVIOUS_ROOM_IDX
 	STA DATA_OFFSET_CALC
 	JSR convertDataOffsetCalcToDataOffset
@@ -439,6 +498,95 @@ storeRoom:
 	STA LVL_START, X
 	INX
 	
+	; get platforms if they exist
+	JSR getPlatformDataForRoom
+	CMP #$FF
+	BEQ exitStoreRoom	
+
+	STA PLATFORM_DATA_IDX
+
+	nextPlatform:
+		LDY PLATFORM_BANK_OFFSET
+		LDA CURRENT_LEVEL
+		STA LVL_PLATFORMS, Y	
+		INY
+
+		TXA
+		CLC
+		LSR A
+		SEC
+		SBC #$01
+		STA LVL_PLATFORMS, Y	
+		INY
+
+		STY Y_STORAGE
+		LDY PLATFORM_DATA_IDX
+		LDA PLATFORM_DATA, Y
+		LDY Y_STORAGE
+		STA LVL_PLATFORMS, Y	
+		INY
+
+		LDA #$00
+		STA LVL_PLATFORMS, Y
+		INY
+
+		; prep for the next bank by adding 0x20
+		; wrapping back to 0x00 if we're over 0x60
+		LDA PLATFORM_BANK_OFFSET
+		CLC
+		ADC #$20
+
+		BVC nextPlatformBankAddress	; if overflow isn't clear, then go to 0x0[i+4]
+		AND #$0F
+		CLC
+		ADC #$04
+
+		nextPlatformBankAddress:
+		STA PLATFORM_BANK_OFFSET
+		INC PLATFORM_DATA_IDX
+		LDY PLATFORM_DATA_IDX
+		LDA PLATFORM_DATA, Y
+		CMP #$00
+		BEQ exitStoreRoom
+		JMP nextPlatform
+	
+	exitStoreRoom:
+		LDA POTENTIAL
+		CMP #$00
+		RTS
+
+getPlatformDataForRoom:
+	LDY #$00
+
+	LDA PLATFORM_DATA, Y
+	CMP CURRENT_WORLD
+	BEQ checkPlatformRoom
+
+	nextlineOfPlatformData:	
+	TYA
+	CLC
+	ADC #$08
+	TAY
+	
+	LDA PLATFORM_DATA, Y
+	CMP #$FF
+	BEQ platformDataReturn	; no more data, exit with FF in A
+
+	CMP CURRENT_WORLD
+	BNE nextlineOfPlatformData	; not current world
+
+	checkPlatformRoom:
+	LDA PLATFORM_DATA + 1, Y
+	CMP POTENTIAL
+	BNE nextlineOfPlatformData
+
+	foundMatch:
+	; found match!  the offset of actual platform locations is Y + 2
+	INY
+	INY
+	TYA
+
+	platformDataReturn:
 	RTS
 
 ; prng

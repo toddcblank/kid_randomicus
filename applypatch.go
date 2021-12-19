@@ -102,6 +102,11 @@ func main() {
 		return
 	}
 
+	platformDataBytes, err := ioutil.ReadFile("platformData.bin")
+	if err != nil {
+		fmt.Printf("error reading in platform data bytes: %s", err)
+	}
+
 	w4Randomizer, err := ioutil.ReadFile("w4randomizer.bin")
 	if err != nil {
 		fmt.Printf("Errof reading in lvl 4 randomizer: %s", err)
@@ -228,7 +233,7 @@ func main() {
 	patchFile(*outputFile, 0x1FE40, w1ItemData)
 
 	patchFile(*outputFile, 0xAE37, lvl2HijackBytes)
-	patchFile(*outputFile, 0x1F890, lvl2ScreenData)
+	patchFile(*outputFile, 0x1F140, lvl2ScreenData)
 	patchFile(*outputFile, 0x1FE10, lvl2ItemData)
 
 	patchFile(*outputFile, 0xD9E9, w3HijackBytes)
@@ -236,6 +241,7 @@ func main() {
 	patchFile(*outputFile, 0x1FE70, w3ItemData)
 
 	patchFile(*outputFile, 0x1FDE0, doorDistributionBytes)
+	patchFile(*outputFile, 0x1F9B0, platformDataBytes)
 
 	patchFile(*outputFile, 0xF87E, w4HijackBytes)
 	patchFile(*outputFile, 0x1FE90, w4Randomizer)
@@ -279,17 +285,53 @@ func main() {
 	patchFile(*outputFile, 0x1AE3B, createDuplicateValueSlice(0xFF, 0x80))
 	patchFile(*outputFile, 0xBDC3, createDuplicateValueSlice(0xFF, 0x80))
 
+	// change where we read moving platform data from
+	// The radomizer writes all the platform data for all levels starting at 6300
+	patchFile(*outputFile, 0x8B62, []byte{0x00, 0x63})
+	patchFile(*outputFile, 0x8B71, []byte{0x01, 0x63})
+	patchFile(*outputFile, 0x8B78, []byte{0x02, 0x63})
+
+	// W2
+	patchFile(*outputFile, 0xA971, []byte{0x00, 0x63})
+	patchFile(*outputFile, 0xA980, []byte{0x01, 0x63})
+	patchFile(*outputFile, 0xA987, []byte{0x02, 0x63})
+
+	patchFile(*outputFile, 0xCDFD, []byte{0x00, 0x63})
+	patchFile(*outputFile, 0xCE0C, []byte{0x01, 0x63})
+	patchFile(*outputFile, 0xCE13, []byte{0x02, 0x63})
+
 	// change where we load enemies for W1
 	patchFile(*outputFile, 0x1A620, []byte{0x80, 0x61, 0x80, 0x61, 0x80, 0x61})
 	patchFile(*outputFile, 0x1A68A, []byte{0xA0, 0x61, 0xA0, 0x61, 0xA0, 0x61})
+	// for T2/T4 we change the pointers to point to the beginning of the 0x00 data
+	// this prevents platforms from ever being messed with by positional data if the
+	// levels are longer than the original ones
+	patchFile(*outputFile, 0x1A657, []byte{0x0B, 0x7D, 0x0B, 0x7D})
+	patchFile(*outputFile, 0x1A6C1, []byte{0x0B, 0x7D, 0x0B, 0x7D})
+
+	// zero out positional info for enemies in W and W3, leaving it there breaks some platforms
+	// we dont' have to do it for W2 as it's already all 0x00
+	patchFile(*outputFile, 0x1A65B, createDuplicateValueSlice(0x00, 47))
+	patchFile(*outputFile, 0x1A6C5, createDuplicateValueSlice(0x00, 47))
+	patchFile(*outputFile, 0x1B035, createDuplicateValueSlice(0x00, 52))
 
 	// change where we load enemies for W2
 	patchFile(*outputFile, 0xBC4F, []byte{0x80, 0x61, 0x80, 0x61, 0x80, 0x61})
 	patchFile(*outputFile, 0xBD09, []byte{0xA0, 0x61, 0xA0, 0x61, 0xA0, 0x61})
+	// for T2/T4 we change the pointers to point to the beginning of the 0x00 data
+	// this prevents platforms from ever being messed with by positional data if the
+	// levels are longer than the original ones
+	patchFile(*outputFile, 0xBCAE, []byte{0xA2, 0xBC, 0xA2, 0xBC})
+	patchFile(*outputFile, 0xBD68, []byte{0xA2, 0xBC, 0xA2, 0xBC})
 
 	// change where we load enemies for W3
 	patchFile(*outputFile, 0x1AF81, []byte{0x80, 0x61, 0x80, 0x61, 0x80, 0x61})
 	patchFile(*outputFile, 0x1AFF5, []byte{0xA0, 0x61, 0xA0, 0x61, 0xA0, 0x61})
+	// for T2/T4 we change the pointers to point to the beginning of the 0x00 data
+	// this prevents platforms from ever being messed with by positional data if the
+	// levels are longer than the original ones
+	patchFile(*outputFile, 0x1AFBD, []byte{0x21, 0x78, 0x21, 0x78})
+	patchFile(*outputFile, 0x1B031, []byte{0xA2, 0xBC, 0xA2, 0xBC})
 
 	// change where we load enemies for W4
 	patchFile(*outputFile, 0xFF07, []byte{0x80, 0x61, 0x80, 0x61, 0x80, 0x61})
