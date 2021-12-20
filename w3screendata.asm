@@ -43,9 +43,9 @@ db $00, $00, $00, $00, $00, $00, $00, $00 ; not used
 db $00, $00, $00, $00, $00, $00, $00, $70 ; ending room
 db $00, $00, $00, $00, $00, $00, $2d, $70 ; ending room
 db $00, $00, $00, $00, $00, $00, $66, $70 ; ending room
-db $80, $B2, $00, $04, $04, $be, $B7, $70 ; starting room (duplicate of 11)
-db $EB, $FE, $00, $07, $07, $5f, $79, $72 ; starting room (duplicate of 12)
-db $EB, $FE, $00, $07, $07, $5f, $79, $72 ; starting room (duplicate of 12)
+db $80, $B2, $00, $00, $04, $be, $B7, $70 ; starting room (duplicate of 11)
+db $EB, $FE, $00, $00, $07, $5f, $79, $72 ; starting room (duplicate of 12)
+db $EB, $FE, $00, $00, $07, $5f, $79, $72 ; starting room (duplicate of 12)
 db $00, $00, $00, $00, $00, $00, $FF, $FF ; fake "end of level" room
 ; binary representation, easier to edit/verify
 ;1110 0001 1010 0000 0000 0000 0000 0000 0000 0010
