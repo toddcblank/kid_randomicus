@@ -28,9 +28,9 @@ MAX_PLATFORM_SCRNS	equ		#$08
 LVL_MAX_ITEMS		equ		#$05
 FIRST_ROOM			equ		#$29
 FIRST_EXIT_OPTION	equ		#$26
-
+UPGRADE_ROOM	    equ	 	#$24
 DOOR_DISTRIBUTION equ   $FDD0
-
+CURRENT_STR			equ 	$0152
 LVL_2_1_SIZE		equ		#$36
 LVL_2_2_SIZE		equ		#$3C
 LVL_2_3_SIZE		equ		#$3C
@@ -185,7 +185,7 @@ generateEnemies:
 	TAY
 	LDA (PARAM_ENEMY_TABLE1_LB), Y
 	STA LVL_ENEMIES_T1, X
-	
+	STA LVL_ENEMIES_T1 - 1, X
 	; select T2 Enemy, it's always 0x10 more than table 1
 	JSR prng
 	AND #$0F
@@ -194,8 +194,11 @@ generateEnemies:
 	TAY
 	LDA (PARAM_ENEMY_TABLE1_LB), Y
 	STA LVL_ENEMIES_T2, X
+	STA LVL_ENEMIES_T2 - 1, X
 	
 	DEX
+	DEX
+
 	BPL genEnemyLoop
 	RTS
 
@@ -264,8 +267,6 @@ placeDoor:
 	
 	INC DOOR_COUNT
 	STX LAST_DOOR_ROOM_IDX
-	INC LAST_DOOR_ROOM_IDX
-	INC LAST_DOOR_ROOM_IDX
 
 	RTS
 	
@@ -289,7 +290,35 @@ pickADoor:
 	loadDoorFromDistribution:
 	TAY
 	LDA DOOR_DISTRIBUTION, Y
-	
+	STA TEMP_JUNK
+	CMP UPGRADE_ROOM
+	BNE exitPickADoor
+
+	; if we got an upgrade room, check that our str * 2 < world_value
+	; get the max str for our world
+	LDA CURRENT_WORLD
+	CMP #$06
+	BNE w2Max
+	LDA #$04
+	JMP compare_str
+
+	w2Max:
+	CMP #$04
+	BNE w1Max
+	LDA #$02
+	JMP compare_str
+
+	w1Max:
+	LDA #$00
+
+	; check against current str
+	compare_str:
+	CMP CURRENT_STR
+	BPL exitPickADoor
+	JMP pickADoor
+
+	exitPickADoor:
+	LDA TEMP_JUNK
 	RTS
 
 addItem:
