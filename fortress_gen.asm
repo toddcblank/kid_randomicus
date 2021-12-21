@@ -28,7 +28,7 @@
 ;
 ; rooms!
 ;FORTRESS_ROOMS_CONNECTIONS	equ	$BCF0
-FORTRESS_ROOMS_CONNECTIONS	equ	$F2F0
+FORTRESS_ROOMS_CONNECTIONS	equ	$F290
 START_ROOM					equ	#$33
 DUNGEON_START				equ	$70AF
 ENEMY_START					equ $712F
@@ -147,7 +147,12 @@ loop:
   INC $01                  
   INC $03                  
   DEX                      
-  BNE loop                
+  BNE loop  
+
+JMP zerodungeon
+
+newDungeonAfterDeadend:
+INC DUNGEON_SEED_LB              
 
 ; zero out the dungeon we copied
 zerodungeon:
@@ -182,9 +187,25 @@ newseed:
 	STA DUNGEON_SEED_RB
 
 newdungeon:
+LDA CURRENT_LEVEL_IDX
+CMP #$03
+BNE checkForW2
 LDA FORTRESS_SIZE
+JMP storeSize
+
+checkForW2:
+CMP #$05
+BNE checkForW3
+LDA FORTRESS_SIZE + 8
+JMP storeSize
+
+checkForW3:
+LDA FORTRESS_SIZE + 16
+
+storeSize:
 STA ROOM_COUNT
 
+setStartRoom:
 ; start room is 28th room, which is the 54th byte (0x36)
 LDY #$36
 STY ROOM_OFFSET
@@ -242,7 +263,7 @@ STA DEADEND_DETECTOR
 deadend_detect:
 LDA DEADEND_DETECTOR
 BNE populatevalidpaths	;if DEADEND_DETECTOR gets to 0 give up and start over
-JMP placeboss	;for now just exit, i think we should retry if it's working
+JMP newDungeonAfterDeadend	;start over with the next dungeon seed
 
 
 populatevalidpaths:
@@ -265,7 +286,7 @@ pickexit:
 ; NEED_EXIT with the exit that the current room needs to support
 DEC DEADEND_DETECTOR
 BNE rngdir	;if DEADEND_DETECTOR gets to 0 give up and start over
-JMP placeboss	;for now just exit, i think we should retry if it's working
+JMP newDungeonAfterDeadend	;start over with the next dungeon seed
 rngdir:
 jsr prng
 CLC
