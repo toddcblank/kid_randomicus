@@ -29,7 +29,7 @@ LVL_MAX_ITEMS		equ		#$05
 FIRST_ROOM			equ		#$29
 FIRST_EXIT_OPTION	equ		#$26
 UPGRADE_ROOM	    equ	 	#$24
-DOOR_DISTRIBUTION equ   $FDD0
+DOOR_DISTRIBUTION 	equ   	$FDD0
 CURRENT_STR			equ 	$0152
 LVL_2_1_SIZE		equ		#$36
 LVL_2_2_SIZE		equ		#$3C
@@ -69,14 +69,16 @@ PLATFORM_BANK_OFFSET	equ		$009E
 
 PLATFORM_DATA_IDX		equ		$008A
 
+LAST_LEVEL_RANDOMIZED	equ		$011D
+FIXED_SEED_LB			equ		$011E
+FIXED_SEED_HB			equ		$011F
+
 ; RNG variables
-INITIAL_SEED_LB		equ		$00EF
-INITIAL_SEED_RB		equ		$00F0
+SYSTEM_SEED_LB		equ		$00EF
+SYSTEM_SEED_RB		equ		$00F0
 RNG_SEED 			equ 	$0197
-RNG_SEED_RB 		equ		$0198
 Y_STORAGE 			equ		$0199	; used because prng clobbers Y, let's us store and load it if needed
 STORE_SEED_LB		equ		$00B0
-STORE_SEED_RB		equ		$00B1
 
 
 org ROUTINE
@@ -114,20 +116,49 @@ writeRoomToLoadAddr:
 	RTS					; we only re-generate on the first screen
 	
 seedRNG:
-	LDA INITIAL_SEED_LB
+checkForNextLevelSeed:
+	LDA FIXED_SEED_LB
+	; if Fixed seed isn't set, then we randomize every time
+	BEQ useSystemRNG
+
+	LDA CURRENT_LEVEL
+	CMP LAST_LEVEL_RANDOMIZED
+	BEQ useFixedRng
+	STA LAST_LEVEL_RANDOMIZED
+	; new level, increment the seed number so 
+	; levels don't repeat from the previous
+	INC FIXED_SEED_LB
+	BNE useFixedRng
+	INC FIXED_SEED_LB
+	INC FIXED_SEED_HB
+	BNE useFixedRng
+	INC FIXED_SEED_HB
+
+useFixedRng:
+	; first check for a set seed
+	LDA FIXED_SEED_LB
+	STA RNG_SEED	
+	STA STORE_SEED_LB
+
+	LDA FIXED_SEED_LB + 1
+	STA RNG_SEED + 1	
+	STA STORE_SEED_LB + 1
+	RTS
+
+useSystemRNG:
+	LDA SYSTEM_SEED_LB
 	BNE storerng_lb
 	LDA #$BE
 	storerng_lb:
 	STA STORE_SEED_LB
 	STA RNG_SEED
 	
-	LDA INITIAL_SEED_RB
+	LDA SYSTEM_SEED_RB
 	BNE storerng_rb
 	LDA #$EF
 	storerng_rb
-	STA RNG_SEED_RB
-	STA STORE_SEED_RB
-	
+	STA STORE_SEED_LB + 1
+	STA RNG_SEED + 1	
 	RTS
 
 generateLevel:

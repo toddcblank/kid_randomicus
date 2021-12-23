@@ -227,6 +227,25 @@ func main() {
 		fmt.Printf("Error reading patch: %s", err)
 		return
 	}
+	passwordText, err := ioutil.ReadFile("passwordScreenTxt.bin")
+	if err != nil {
+		fmt.Printf("error reading patch: %s", err)
+		return
+	}
+
+	passwordHijack, err := ioutil.ReadFile("passwordHijack.bin")
+	if err != nil {
+		fmt.Printf("Error reading patch: %s", err)
+		return
+	}
+	setSeedFromPassword, err := ioutil.ReadFile("setSeedFromPassword.bin")
+	if err != nil {
+		fmt.Printf("Error reading patch: %s", err)
+		return
+	}
+
+	patchFile(*outputFile, 0x6BE0, passwordHijack)
+	patchFile(*outputFile, 0x6F10, setSeedFromPassword)
 
 	patchFile(*outputFile, 0x9752, w1HijackBytes)
 	patchFile(*outputFile, 0x1FA20, w1ScreenData)
@@ -382,6 +401,9 @@ func main() {
 
 	// fast text in rooms
 	patchFile(*outputFile, 0x195F2, []byte{0x01})
+
+	// updated text in password screen
+	patchFile(*outputFile, 0x6B6E, passwordText)
 }
 
 func createDuplicateValueSlice(value byte, repeatedNum int) []byte {

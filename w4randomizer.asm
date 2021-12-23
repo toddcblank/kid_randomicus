@@ -71,18 +71,18 @@ writeRoomToLoadAddr:
 	RTS					; we only re-generate on the first screen
 	
 seedRNG:
-	LDA INITIAL_SEED_LB
+	LDA STORE_SEED_LB
 	BNE storerng_lb
 	LDA #$BE
 	storerng_lb:
 	STA STORE_SEED_LB
 	STA RNG_SEED
 	
-	LDA INITIAL_SEED_RB
+	LDA STORE_SEED_RB
 	BNE storerng_rb
 	LDA #$EF
 	storerng_rb
-	STA RNG_SEED_RB
+	STA RNG_SEED + 1
 	STA STORE_SEED_RB
 	
 	RTS

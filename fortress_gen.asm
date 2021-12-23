@@ -46,8 +46,8 @@ NEED_EXIT_NEXT				equ $0071	; which direction we came from, this tells us
 ROOM_OFFSET					equ $0072	; which room we're working with 0 - 63
 NEED_EXIT					equ $0073	; which exit will need to be available in a room
 NEXT_ROOM_OFFSET			equ $0074	; the next room we're going to
-INITIAL_SEED_LB				equ	$00EF
-INITIAL_SEED_RB				equ	$00F0
+SYSTEM_SEED_LB				equ	$00EF
+SYSTEM_SEED_RB				equ	$00F0
 RNG_SEED 					equ	$0197
 RNG_SEED_RB 				equ	$0198
 PATH_COMPARISON				equ	$0075
@@ -64,10 +64,11 @@ ROOM_PATH_START				equ $6200
 ROOM_PATH_IDX				equ $007E
 EXISTING_EXITS				equ $007F
 
-DUNGEON_SEED_LB				equ $00B0
-DUNGEON_SEED_RB				equ $00B1
+DUNGEON_SEED_LB			equ		$011E
+DUNGEON_SEED_RB			equ		$011F
 
 CURRENT_LEVEL_IDX			equ $00A0
+STORE_SEED_LB		equ		$00B0
 
 org FORTRESS_ROOMS_CONNECTIONS
 db $00, $00, $00, $00; room 00 - not a real room
@@ -149,10 +150,25 @@ loop:
   DEX                      
   BNE loop  
 
-JMP zerodungeon
+LDA DUNGEON_SEED_LB
+BEQ newseed
+STA RNG_SEED
+STA STORE_SEED_LB
+LDA DUNGEON_SEED_RB
+BEQ newseed
+STA RNG_SEED_RB
+STA STORE_SEED_LB + 1
+CLC
+BCC zerodungeon
 
-newDungeonAfterDeadend:
-INC DUNGEON_SEED_LB              
+newseed:
+	; seed our rng
+	LDA SYSTEM_SEED_LB
+	STA RNG_SEED
+	STA DUNGEON_SEED_LB
+	LDA SYSTEM_SEED_RB
+	STA RNG_SEED_RB
+	STA DUNGEON_SEED_RB
 
 ; zero out the dungeon we copied
 zerodungeon:
@@ -168,23 +184,7 @@ STA ROOM_PATH_IDX
 LDA #$FF
 STA DEADEND_DETECTOR
 
-LDA DUNGEON_SEED_LB
-BEQ newseed
-STA RNG_SEED
-LDA DUNGEON_SEED_RB
-BEQ newseed
-STA RNG_SEED_RB
-CLC
-BCC newdungeon
 
-newseed:
-	; seed our rng
-	LDA INITIAL_SEED_LB
-	STA RNG_SEED
-	STA DUNGEON_SEED_LB
-	LDA INITIAL_SEED_RB
-	STA RNG_SEED_RB
-	STA DUNGEON_SEED_RB
 
 newdungeon:
 LDA CURRENT_LEVEL_IDX
@@ -263,7 +263,7 @@ STA DEADEND_DETECTOR
 deadend_detect:
 LDA DEADEND_DETECTOR
 BNE populatevalidpaths	;if DEADEND_DETECTOR gets to 0 give up and start over
-JMP newDungeonAfterDeadend	;start over with the next dungeon seed
+JMP zerodungeon	;start over with the next dungeon seed
 
 
 populatevalidpaths:
@@ -286,7 +286,7 @@ pickexit:
 ; NEED_EXIT with the exit that the current room needs to support
 DEC DEADEND_DETECTOR
 BNE rngdir	;if DEADEND_DETECTOR gets to 0 give up and start over
-JMP newDungeonAfterDeadend	;start over with the next dungeon seed
+JMP zerodungeon	;start over with the next dungeon seed
 rngdir:
 jsr prng
 CLC
