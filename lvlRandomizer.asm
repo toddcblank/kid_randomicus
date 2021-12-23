@@ -31,13 +31,6 @@ FIRST_EXIT_OPTION	equ		#$26
 UPGRADE_ROOM	    equ	 	#$24
 DOOR_DISTRIBUTION 	equ   	$FDD0
 CURRENT_STR			equ 	$0152
-LVL_2_1_SIZE		equ		#$36
-LVL_2_2_SIZE		equ		#$3C
-LVL_2_3_SIZE		equ		#$3C
-
-LVL_3_1_SIZE		equ		#$16
-LVL_3_2_SIZE		equ		#$1C
-LVL_3_3_SIZE		equ		#$20
 
 ; variables that are set per level
 LVL_GEN_PARAM_SIZE	equ	$00C0 ; size of the level.  how many rooms to build

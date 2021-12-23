@@ -326,12 +326,14 @@ func main() {
 	// this prevents platforms from ever being messed with by positional data if the
 	// levels are longer than the original ones
 	patchFile(*outputFile, 0x1A657, []byte{0x0B, 0x7D, 0x0B, 0x7D})
-	patchFile(*outputFile, 0x1A6C1, []byte{0x0B, 0x7D, 0x0B, 0x7D})
+	patchFile(*outputFile, 0x1A6BF, []byte{0x75, 0x7D, 0x75, 0x7D, 0x75, 0x7D})
+
+	// set all the positions for T3 to be 38, which puts enemies toward the bottom in the middle
+	patchFile(*outputFile, 0x1A6C5, createDuplicateValueSlice(0x38, 0x1B))
 
 	// zero out positional info for enemies in W and W3, leaving it there breaks some platforms
 	// we dont' have to do it for W2 as it's already all 0x00
 	patchFile(*outputFile, 0x1A65B, createDuplicateValueSlice(0x00, 47))
-	patchFile(*outputFile, 0x1A6C5, createDuplicateValueSlice(0x00, 47))
 	patchFile(*outputFile, 0x1B035, createDuplicateValueSlice(0x00, 52))
 
 	// change where we load enemies for W2
