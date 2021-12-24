@@ -150,25 +150,31 @@ loop:
   DEX                      
   BNE loop  
 
+
+
 LDA DUNGEON_SEED_LB
-BEQ newseed
+BEQ checkforExistingSeed
 STA RNG_SEED
-STA STORE_SEED_LB
 LDA DUNGEON_SEED_RB
-BEQ newseed
 STA RNG_SEED_RB
-STA STORE_SEED_LB + 1
-CLC
-BCC zerodungeon
+JMP zerodungeon
+
+checkforExistingSeed:
+	LDA STORE_SEED_LB
+	BEQ newseed
+	STA RNG_SEED
+	LDA STORE_SEED_LB + 1
+	STA RNG_SEED_RB
+	JMP zerodungeon
 
 newseed:
 	; seed our rng
 	LDA SYSTEM_SEED_LB
+	STA STORE_SEED_LB
 	STA RNG_SEED
-	STA DUNGEON_SEED_LB
 	LDA SYSTEM_SEED_RB
-	STA RNG_SEED_RB
-	STA DUNGEON_SEED_RB
+	STA STORE_SEED_LB + 1
+	STA RNG_SEED + 1
 
 ; zero out the dungeon we copied
 zerodungeon:
