@@ -28,7 +28,7 @@
 ;
 ; rooms!
 ;FORTRESS_ROOMS_CONNECTIONS	equ	$BCF0
-FORTRESS_ROOMS_CONNECTIONS	equ	$F2F0
+FORTRESS_ROOMS_CONNECTIONS	equ	$F290
 START_ROOM					equ	#$33
 DUNGEON_START				equ	$70AF
 ENEMY_START					equ $712F
@@ -46,10 +46,8 @@ NEED_EXIT_NEXT				equ $0071	; which direction we came from, this tells us
 ROOM_OFFSET					equ $0072	; which room we're working with 0 - 63
 NEED_EXIT					equ $0073	; which exit will need to be available in a room
 NEXT_ROOM_OFFSET			equ $0074	; the next room we're going to
-INITIAL_SEED_LB				equ	$00EF
-INITIAL_SEED_RB				equ	$00F0
-;INITIAL_SEED_LB				equ	$0080
-;INITIAL_SEED_RB				equ	$0081
+SYSTEM_SEED_LB				equ	$00EF
+SYSTEM_SEED_RB				equ	$00F0
 RNG_SEED 					equ	$0197
 RNG_SEED_RB 				equ	$0198
 PATH_COMPARISON				equ	$0075
@@ -66,10 +64,11 @@ ROOM_PATH_START				equ $6200
 ROOM_PATH_IDX				equ $007E
 EXISTING_EXITS				equ $007F
 
-DUNGEON_SEED_LB				equ $00B0
-DUNGEON_SEED_RB				equ $00B1
+DUNGEON_SEED_LB			equ		$011E
+DUNGEON_SEED_RB			equ		$011F
 
 CURRENT_LEVEL_IDX			equ $00A0
+STORE_SEED_LB		equ		$00B0
 
 org FORTRESS_ROOMS_CONNECTIONS
 db $00, $00, $00, $00; room 00 - not a real room
@@ -108,7 +107,7 @@ db $FF, $FF, $0F, $1A; room 1A - 1111 1111 1111 1111 (same as 19)
 db $86, $48, $0F, $1B; room 1B - 1000 0110 0100 1000
 
 db $50, $50, $05, $1C; room 1C - 0101 0000 0101 0000
-db $50, $50, $05, $1D; room 1D - 0101 0000 0101 0000 (same as 1C)
+db $00, $00, $00, $1D; room 1D - 0101 0000 0101 0000 (same as 1C)
 db $FF, $F8, $0F, $1E; room 1E - 1111 1111 1111 1000
 db $FF, $F8, $0F, $1F; room 1F - 1111 1111 1111 1000
 
@@ -126,7 +125,14 @@ db $AA, $0A, $0B, $28; room 28 - 1010 1010 0000 1010 (hot springs)
 db $FF, $FF, $0F, $29; room 29 - 1111 1111 1111 1111 (1-4 and 3-4 boss room)
 
 
-originaldungeon:
+originaldungeon:           
+  ASL A                    
+  TAX                      
+  LDA $991C,X              
+  STA $00                  
+  LDA $991D,X              
+  STA $01                  
+
 ; original code that we swiped
   LDA #$00                 
   STA $02                  
@@ -142,7 +148,27 @@ loop:
   INC $01                  
   INC $03                  
   DEX                      
-  BNE loop                
+  BNE loop  
+
+LDA DUNGEON_SEED_LB
+BEQ newseed
+STA RNG_SEED
+STA STORE_SEED_LB
+LDA DUNGEON_SEED_RB
+BEQ newseed
+STA RNG_SEED_RB
+STA STORE_SEED_LB + 1
+CLC
+BCC zerodungeon
+
+newseed:
+	; seed our rng
+	LDA SYSTEM_SEED_LB
+	STA RNG_SEED
+	STA DUNGEON_SEED_LB
+	LDA SYSTEM_SEED_RB
+	STA RNG_SEED_RB
+	STA DUNGEON_SEED_RB
 
 ; zero out the dungeon we copied
 zerodungeon:
@@ -158,28 +184,28 @@ STA ROOM_PATH_IDX
 LDA #$FF
 STA DEADEND_DETECTOR
 
-LDA DUNGEON_SEED_LB
-BEQ newseed
-STA RNG_SEED
-LDA DUNGEON_SEED_RB
-BEQ newseed
-STA RNG_SEED_RB
-CLC
-BCC newdungeon
 
-newseed:
-	; seed our rng
-	LDA INITIAL_SEED_LB
-	STA RNG_SEED
-	STA DUNGEON_SEED_LB
-	LDA INITIAL_SEED_RB
-	STA RNG_SEED_RB
-	STA DUNGEON_SEED_RB
 
 newdungeon:
+LDA CURRENT_LEVEL_IDX
+CMP #$03
+BNE checkForW2
 LDA FORTRESS_SIZE
+JMP storeSize
+
+checkForW2:
+CMP #$05
+BNE checkForW3
+LDA FORTRESS_SIZE + 8
+JMP storeSize
+
+checkForW3:
+LDA FORTRESS_SIZE + 16
+
+storeSize:
 STA ROOM_COUNT
 
+setStartRoom:
 ; start room is 28th room, which is the 54th byte (0x36)
 LDY #$36
 STY ROOM_OFFSET
@@ -237,7 +263,7 @@ STA DEADEND_DETECTOR
 deadend_detect:
 LDA DEADEND_DETECTOR
 BNE populatevalidpaths	;if DEADEND_DETECTOR gets to 0 give up and start over
-JMP placeboss	;for now just exit, i think we should retry if it's working
+JMP zerodungeon	;start over with the next dungeon seed
 
 
 populatevalidpaths:
@@ -260,7 +286,7 @@ pickexit:
 ; NEED_EXIT with the exit that the current room needs to support
 DEC DEADEND_DETECTOR
 BNE rngdir	;if DEADEND_DETECTOR gets to 0 give up and start over
-JMP placeboss	;for now just exit, i think we should retry if it's working
+JMP zerodungeon	;start over with the next dungeon seed
 rngdir:
 jsr prng
 CLC
@@ -527,7 +553,7 @@ populateenemies:
 	
 	nextroom:
 	DEC ENEMY_PLACEMENT_IDX
-	BEQ done
+	BMI done
 	JMP iterate_rooms
 	
 	done:

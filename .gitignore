@@ -1,1 +1,27 @@
 *.nes
+doorDistribution.bin
+platformData.bin
+w1hijack.bin
+w1itemLocations.bin
+w1screendata.bin
+w2enemyTables.bin
+w2hijack.bin
+w2itemLocations.bin
+w2screendata.bin
+w3hijack.bin
+w3itemLocations.bin
+w3screendata.bin
+w4hijack.bin
+w4randomizer.bin
+world1itemLocations.bin
+*.ips
+*.bak
+enemyFrequencyTable.bin
+fortress_gen.bin
+lvlRandomizer.bin
+asm6f_64.exe
+Kid Icarus (patched)_prg_27C010.bin
+maze.html
+patches.json
+passwordHijack.bin
+setSeedFromPassword.bin
