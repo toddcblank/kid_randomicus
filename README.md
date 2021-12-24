@@ -3,40 +3,43 @@ Pure ROM Kid Icarus randomizer
 
 Contains several 6502 asm files and helper scripts that randomizes several features of Kid Icarus.  This is essentially ROM hack that implements the Kid Icarus Randomizer developed by myself and FruitBatSalad.
 
-For World 1 & World 3 the asm replaces the routine that copies the level data and instead programatically generates a completeable level.  For World 2, we actually choose the next screen via randomization logic rather than pre-generating the level.  
+Each platforming level is randomized upon initial load, including which screens, doors, enemies, and items.
 
 For the fortresses I generate a path so that they should be completable from any room that you can get to.  This does not count going into the corner of a room that is a deadend in and of itself, so don't go anywhere that you shouldn't =)
 
-It also contains a shell script that lets you easily move around where in the rom the code lives, and builds the asm and patches the rom using the go program.
+It also contains a shell script for compiling the assembly and patching the rom.
 
-The go file is used to automate the patching of a Kid Icarus rom for the couple dozen patches that the romhack requires.
+There is go utility that is used to automate the patching of a Kid Icarus rom for the few dozen patches that the romhack requires.  The patches fall into 3 categories:
 
-There's also a utility go file that will print out the fortress given a string of bytes that represent the fortress (128 bytes starting at location $70AF)
+* Large patches compiled from `.asm` files
+* Smaller static patches that exist as `.bin` files 
+* Tiny static patches or large overwrites of data that are done programmatically in the go utility
 
-Specifically it randomizes:
-* The screens in the scrolling levels.  These will be randomized every load, which means it'll change on death
-* Doors in World 1 & World 3.  There's no guarantee on the number or types of rooms you'll find
-* Doors in World 2 will always be the same, and always at the end of the levels (Strength Upgrade in 2-1, Challenge room in 2-2, and Black Market in 2-3)
-* Fortresses - These are randomized once per playthrough, so if you die they will remain the same
+There's a utility go file / executable that will print out the fortress given a string of bytes that represent the fortress (128 bytes starting at location $70AF) located in `./fortress-maze-viewer`
+
+## Specifically this game randomizes:
+
+* The screens in the scrolling levels.  These will normally be randomized every load, which means it'll change on death, but the seed can be fixed via the password screen (see next note)
+* Doors in World 1, World 2 & World 3.  There's no guarantee on the number or types of rooms you'll find, other than the game will not spawn strength upgrade rooms in world 1 if you already have a strength of +1 or higher.  It will not spawn them in world 2 if you have a strength of +3 or higher.
+* Fortresses - These are randomized once per playthrough, so if you die they will always remain the same.  The fotresses get longer as the game goes on, with 1-4 being 32 rooms, 2-4 being 40 rooms, and 3-4 being 48 rooms.
 * Enemies in Fortresses - If you see Eggplant Wizards be careful!  There might not be a hospital!
+* World 4 screens and enemies are randomized
 
-Things I did not randomize:
-* The item locations
-* The enemies in the scrolling worlds
-* World 4
+## Quality of Life Patches:
 
-Quality of Life Patches:
 * Removed the hidden score requirement for upgrade rooms
 * Adjusted prices to be more reasonable
-* Pencil, Map, and Torch functionality are enabled by default in the fortresses
+* Pencil, Map, and Torch functionality are enabled by default in the fortresses so that you can find your way in the new mazes
 * The pause screen will show a "seed" value for the current level.  This is helpful for me if you run into something that shouldn't happen, I can recreate the same level to investigate
-* Updated Title Screen & Credits to shout out all the people that have contributed to the randomizer
+* Updated Title Screen & Credits to shout out the people that have contributed to the randomizer to help make this happen
+* Hammers now do more damage, they are a viable alternative if you happen to not find strength upgrades.
 
-Things I had to remove because I didn't want to deal with them
-* Moving Platforms - these don't play nice with doors and some enemies, so rather than try to solve that in limited space, I removed all screens with platforms
+## Things I had to remove because I didn't want to deal with them
+
 * Centurions in Fortresses - their default placement would sometimes block exits that I don't account for in the fortress generation
 
-Known Bugs:
-* Pot Rooms in world 3 are jumbled
-* You can jump over the exit screens in World 2, I suggest you refrain from doing so
+## Setting your desired seed
 
+You can choose your starting seed, and prevent the platforming levels from re-randomizing on death by entering a password on the title screen that starts with `KI` and has anything in the next 4 characters.
+
+![](setSeedExample.png)
