@@ -42,4 +42,5 @@ There's a utility go file / executable that will print out the fortress given a 
 
 You can choose your starting seed, and prevent the platforming levels from re-randomizing on death by entering a password on the title screen that starts with `KI` and has anything in the next 4 characters.
 
+
 ![](setSeedExample.png)
