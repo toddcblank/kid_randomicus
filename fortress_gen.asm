@@ -190,8 +190,6 @@ STA ROOM_PATH_IDX
 LDA #$FF
 STA DEADEND_DETECTOR
 
-
-
 newdungeon:
 LDA CURRENT_LEVEL_IDX
 CMP #$03
@@ -202,11 +200,11 @@ JMP storeSize
 checkForW2:
 CMP #$05
 BNE checkForW3
-LDA FORTRESS_SIZE + 8
+LDA FORTRESS_SIZE + 4
 JMP storeSize
 
 checkForW3:
-LDA FORTRESS_SIZE + 16
+LDA FORTRESS_SIZE + 8
 
 storeSize:
 STA ROOM_COUNT
@@ -497,9 +495,9 @@ populateenemies:
 	LDA #$51
 	JMP storeenemy
 	spike09:
-	CMP #$09				; Spike room 09
+	CMP #$08				; Spike room 08
 	BNE spike13
-	LDA #$52
+	LDA #$31
 	JMP storeenemy
 	spike13:
 	CMP #$13				; Spike room 13
