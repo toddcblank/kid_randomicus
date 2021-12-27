@@ -19,7 +19,10 @@ There's a utility go file / executable that will print out the fortress given a 
 
 ## Specifically this game randomizes:
 
-* The screens in the scrolling levels.  These will normally be randomized every load, which means it'll change on death, but the seed can be fixed via the password screen (see next note)
+* The screens in the scrolling levels.  These will normally be randomized every load, which means it'll change on death, but the seed can be fixed via the password screen (see next note).  Some level lengths have been slightly adjusted:
+    * 1-1, 1-2, and 1-3 area all 18 screens in length (normally 12, 14, and 20, respectively)
+    * 2-1 is 27 screens in length, 2-2 and 2-3 are 30 screens (the same as the vanilla game)
+    * 3-1, 3-2, and 3-3 are 20 screens in length (normally 11, 14, and 16, respectively)
 * Doors in World 1, World 2 & World 3.  There's no guarantee on the number or types of rooms you'll find, other than the game will not spawn strength upgrade rooms in world 1 if you already have a strength of +1 or higher.  It will not spawn them in world 2 if you have a strength of +3 or higher.
 * Fortresses - These are randomized once per playthrough, so if you die they will always remain the same.  The fotresses get longer as the game goes on, with 1-4 being 32 rooms, 2-4 being 40 rooms, and 3-4 being 48 rooms.
 * Enemies in Fortresses - If you see Eggplant Wizards be careful!  There might not be a hospital!
