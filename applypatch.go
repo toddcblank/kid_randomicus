@@ -322,11 +322,12 @@ func main() {
 	// change where we load enemies for W1
 	patchFile(*outputFile, 0x1A620, []byte{0x80, 0x61, 0x80, 0x61, 0x80, 0x61})
 	patchFile(*outputFile, 0x1A68A, []byte{0xA0, 0x61, 0xA0, 0x61, 0xA0, 0x61})
+	patchFile(*outputFile, 0x1A6BF, []byte{0xC0, 0x61, 0xC0, 0x61, 0xC0, 0x61})
+
 	// for T2/T4 we change the pointers to point to the beginning of the 0x00 data
 	// this prevents platforms from ever being messed with by positional data if the
 	// levels are longer than the original ones
 	patchFile(*outputFile, 0x1A657, []byte{0x0B, 0x7D, 0x0B, 0x7D})
-	patchFile(*outputFile, 0x1A6BF, []byte{0x75, 0x7D, 0x75, 0x7D, 0x75, 0x7D})
 
 	// set all the positions for T3 to be 38, which puts enemies toward the bottom in the middle
 	patchFile(*outputFile, 0x1A6C5, createDuplicateValueSlice(0x38, 0x1B))
@@ -339,6 +340,7 @@ func main() {
 	// change where we load enemies for W2
 	patchFile(*outputFile, 0xBC4F, []byte{0x80, 0x61, 0x80, 0x61, 0x80, 0x61})
 	patchFile(*outputFile, 0xBD09, []byte{0xA0, 0x61, 0xA0, 0x61, 0xA0, 0x61})
+
 	// for T2/T4 we change the pointers to point to the beginning of the 0x00 data
 	// this prevents platforms from ever being messed with by positional data if the
 	// levels are longer than the original ones
@@ -348,11 +350,12 @@ func main() {
 	// change where we load enemies for W3
 	patchFile(*outputFile, 0x1AF81, []byte{0x80, 0x61, 0x80, 0x61, 0x80, 0x61})
 	patchFile(*outputFile, 0x1AFF5, []byte{0xA0, 0x61, 0xA0, 0x61, 0xA0, 0x61})
+	patchFile(*outputFile, 0x1B02F, []byte{0xC0, 0x61, 0xC0, 0x61, 0xC0, 0x61})
+
 	// for T2/T4 we change the pointers to point to the beginning of the 0x00 data
 	// this prevents platforms from ever being messed with by positional data if the
 	// levels are longer than the original ones
 	patchFile(*outputFile, 0x1AFBD, []byte{0x21, 0x78, 0x21, 0x78})
-	patchFile(*outputFile, 0x1B031, []byte{0xA2, 0xBC, 0xA2, 0xBC})
 
 	// change where we load enemies for W4
 	patchFile(*outputFile, 0xFF07, []byte{0x80, 0x61, 0x80, 0x61, 0x80, 0x61})

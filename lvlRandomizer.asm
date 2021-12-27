@@ -22,7 +22,8 @@ LVL_DOORS			equ		$6100
 LVL_ITEM_COUNT		equ		$6140
 LVL_ITEMS			equ		$6141
 LVL_ENEMIES_T1		equ		$6180
-LVL_ENEMIES_T2		equ		$61A0
+LVL_ENEMIES_T3		equ		$61A0
+LVL_ENEMIES_T4		equ		$61C0	; this is positional infor for T3
 LVL_PLATFORMS 		equ		$6300
 MAX_PLATFORM_SCRNS	equ		#$08
 LVL_MAX_ITEMS		equ		#$05
@@ -72,7 +73,7 @@ SYSTEM_SEED_RB		equ		$00F0
 RNG_SEED 			equ 	$0197
 Y_STORAGE 			equ		$0199	; used because prng clobbers Y, let's us store and load it if needed
 STORE_SEED_LB		equ		$00B0
-
+ENEMY_REAPER		equ 	#$0D;	reaper
 
 org ROUTINE
 	LDA CURRENT_SCREEN
@@ -217,9 +218,24 @@ generateEnemies:
 	ADC #$10
 	TAY
 	LDA (PARAM_ENEMY_TABLE1_LB), Y
-	STA LVL_ENEMIES_T2, X
-	STA LVL_ENEMIES_T2 - 1, X
+	STA LVL_ENEMIES_T3, X
+	STA LVL_ENEMIES_T3 - 1, X
 	
+	CMP ENEMY_REAPER
+	BNE zeroPosition
+	
+	addPosition:
+	LDA #$38
+	JMP writePosition
+
+	zeroPosition:
+	LDA #$00
+	
+	writePosition:
+	STA LVL_ENEMIES_T4, X
+	STA LVL_ENEMIES_T4 - 1, X
+
+	nextEnemies:
 	DEX
 	DEX
 
