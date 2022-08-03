@@ -222,47 +222,50 @@ LDA #$07
 STA EXIT_PATH_BYTE
 
 storeroom:
-LDY ROOM_OFFSET
-LDA DUNGEON_START, Y	;if we already had a room then we skip counting it and just pick a new exit
-BNE room_exists
+	LDY ROOM_OFFSET
+	LDA DUNGEON_START, Y	;if we already had a room then we skip counting it and just pick a new exit
+	BNE room_exists
 
-LDA ROOM_ID
-STA DUNGEON_START, Y
-LDY ROOM_PATH_IDX
-STA ROOM_PATH_START, Y
-INC ROOM_PATH_IDX
-DEC ROOM_COUNT
-BNE newroom:
-; room count has hit zero, time to place the boss, maybe
-; first we have some 1-off logic for world 2 fortress
-LDA CURRENT_LEVEL_IDX
-CMP #$05
-BEQ check_for_up_in_w2_boss
-JMP placeboss			;if we've placed the right number of moves, we jump to placing the boss
+	LDA ROOM_ID
+	STA DUNGEON_START, Y
+	LDY ROOM_PATH_IDX
+	STA ROOM_PATH_START, Y
+	INC ROOM_PATH_IDX
+	DEC ROOM_COUNT
+	BNE newroom:
+	; room count has hit zero, time to place the boss, maybe
+	; first we have some 1-off logic for world 2 fortress
+	LDA CURRENT_LEVEL_IDX
+	CMP #$05
+	BEQ check_for_up_in_w2_boss
+	JMP placeboss			;if we've placed the right number of moves, we jump to placing the boss
+
 check_for_up_in_w2_boss:
-LDA NEED_EXIT
-CMP #$01
-BEQ keep_going_for_w2
-JMP placeboss
+	LDA NEED_EXIT
+	CMP #$01
+	BEQ keep_going_for_w2
+	JMP placeboss
+
 keep_going_for_w2:
-; keep adding rooms if we went up and tried to place the boss
-INC ROOM_COUNT
+	; keep adding rooms if we went up and tried to place the boss
+	INC ROOM_COUNT
+	BNE newroom
 
 room_exists:
-; get the existing exits.  if we have other valid, non used exits we want to pick one of those
-STA ROOM_ID
-INY
-LDA DUNGEON_START, Y
-STA EXISTING_EXITS
-JMP deadend_detect
+	; get the existing exits.  if we have other valid, non used exits we want to pick one of those
+	STA ROOM_ID
+	INY
+	LDA DUNGEON_START, Y
+	STA EXISTING_EXITS
+	JMP deadend_detect
 
 newroom:
-; main meet of the algorithm
-; we've got the room for this offset stored in ROOM_ID
-; and Y contains the memory offset (0-127, only the even numbers) to
-; store the room at
-LDA #$FF
-STA DEADEND_DETECTOR
+	; main meet of the algorithm
+	; we've got the room for this offset stored in ROOM_ID
+	; and Y contains the memory offset (0-127, only the even numbers) to
+	; store the room at
+	LDA #$FF
+	STA DEADEND_DETECTOR
 
 deadend_detect:
 LDA DEADEND_DETECTOR
