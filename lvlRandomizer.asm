@@ -606,7 +606,7 @@ storeRoom:
 		ADC #$20
 
 		BVC nextPlatformBankAddress	; if overflow isn't clear, then go to 0x0[i+4]
-		AND #$0F
+		AND #$1F
 		CLC
 		ADC #$04
 
